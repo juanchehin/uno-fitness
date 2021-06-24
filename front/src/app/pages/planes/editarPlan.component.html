@@ -1,0 +1,49 @@
+<div class="container">
+    <h4 class="card-title">Plan "{{ Plan }}"</h4>
+    <div class="col-lg-12 well">
+        <div class="row">
+            <form ngNativeValidate [formGroup]="forma" (ngSubmit)="actualizarPlan()">
+
+                <div class="col-sm-60">
+                    <div class="alert alert-primary" role="alert">
+                        <div class="row">
+                            <div class="col-sm-6 form-group">
+                                <label>Plan</label>
+                                <input formControlName="Plan" [ngModel]="Plan" name="Plan" type="text" class="form-control" placeholder="Plan" required>
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label>Precio</label>
+                                <input formControlName="Precio" [ngModel]="Precio" name="Precio" type="text" class="form-control" placeholder="Precio" required>
+
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label for="start">Estado : </label>
+                                <select formControlName="EstadoPlan" [value]="EstadoPlan" name="EstadoPlan" class="form-control">
+                                                        <option value="A">Alta</option>
+                                                        <option value="B">Baja</option>
+                                                    </select>
+                            </div>
+
+                            <div class="col-sm-6 form-group">
+                                <label>Clases por mes : </label>
+                                <input formControlName="CantClases" [ngModel]="CantClases" name="CantClases" type="text" class="form-control" placeholder="Cantidad de clases" required>
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label>Descripcion </label>
+                                <textarea formControlName="Descripcion" [ngModel]="Descripcion" name="Descripcion" type="text" class="form-control" placeholder="Descripcion" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <button type="submit" class="btn btn-success waves-effect waves-light m-r-10">
+                        <i class="fa fa-save"></i>
+                        Guardar
+                      </button>
+                </div>
+                <br>
+
+
+            </form>
+        </div>
+    </div>
+</div>

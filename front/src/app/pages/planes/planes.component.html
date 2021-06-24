@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <!-- <title>Hello, world!</title> -->
+</head>
+
+<body>
+    <!-- <h1>Hello, world!</h1> -->
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+</body>
+
+</html>
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="custom-control custom-switch">
+                    <input (click)="modificaBandera( )" type="checkbox" class="custom-control-input" id="customSwitch1">
+                    <label class="custom-control-label" for="customSwitch1">Incluye bajas</label>
+                </div>
+                <div class="text-right">
+                    <button [routerLink]="['/mantenimiento/plan']" type="button" class="btn waves-effect waves-light btn-rounded btn-primary">
+                      <i class="fa fa-plus"></i> 
+                      Nuevo Plan
+                    </button>
+                </div>
+                <h3 class="card-title">Planes registrado ( <small> {{ totalPlanes }} </small> )</h3>
+
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nombre del Plan</th>
+                            <th>Clases mensuales</th>
+                            <th>Descripcion</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr *ngFor="let plan of planes">
+                            <td>
+                                {{ plan.Plan }}
+                            </td>
+                            <td>{{ plan.CantClases }}</td>
+                            <td>{{ plan.Descripcion }}</td>
+                            <td>{{ plan.EstadoPlan }}</td>
+                            <td>
+                                <div class="btn-group" role="group" aria-label="Basic example">
+
+                                    <button [routerLink]="['/mantenimiento/plan/editar', plan.IdPlan ]" class="btn btn-muted">
+                                    <i class="material-icons">
+                                        edit
+                                        </i>
+                                    </button>
+                                    <button *ngIf="plan.EstadoPlan === 'A'" (click)="eliminarPlan( plan )" class="btn btn-danger">
+                                        <i class="material-icons">
+                                        delete
+                                        </i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button (click)="cambiarDesde(-5)" class="btn btn-secondary">
+                    Anteriores
+                  </button>
+
+                <button (click)="cambiarDesde(5)" class="btn btn-secondary" style="margin-left: 50px; ">
+                      Siguientes
+                  </button>
+            </div>
+        </div>
+
+    </div>
+
+</div>

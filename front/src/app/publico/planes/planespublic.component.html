@@ -1,0 +1,20 @@
+<br><br>
+<div *ngIf="controlExistenciaPlan()">
+    <div class="card animated fadeIn fast" *ngFor="let plan of planes">
+        <div class="card-body">
+            <h4 class="card-title">{{plan.Plan}}</h4>
+            <p class="card-text"> $ {{plan.Precio}}</p>
+            <p class="card-text"> Cantidad de clases por mes : {{plan.CantClases}}</p>
+            <p class="card-text"><small class="text-muted">{{ plan.Descripcion }}</small></p>
+            <br>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="!controlExistenciaPlan()" class="alert alert-success" role="alert">
+    <h4 class="alert-heading">Planes inexistentes!</h4>
+    <p>No existen planes activas en estos momentos.</p>
+    <hr>
+    <p class="mb-0">Sin planes en UnoFitness.</p>
+</div>
+<br><br>

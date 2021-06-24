@@ -1,0 +1,33 @@
+<!-- <div class="row row-cols-1 row-cols-md-3"> -->
+<div class="row row-cols-1 row-cols-md-3">
+    <!-- ========= Tarjeta 1 ================= -->
+    <div class="col mb-4 ">
+        <div class="card" [ngClass]="{'bg-danger text-warning ':(!clasesDisponibles ||  banderaPlan !== false)}">
+            <img src="assets/images/gym.png" class="mx-auto d-block w-25 h-25">
+            <div class="card-body">
+                <h5 class="card-title">Plan contratado : {{ Plan }}</h5>
+                <p class="card-text">Clases disponibles : {{ clasesDisponibles }}</p>
+                <p class="card-text">Meses de credito : {{ mesesCredito }}</p>
+                <button id="boton" [disabled]="(this.comprobar() || banderaPlan !== false)" (click)="marcarAsistencia()" class="btn btn-success">
+                                            <span class="material-icons">
+                                                done_outline
+                                                </span>
+                                            Marcar asistencia
+                                        </button>
+            </div>
+        </div>
+    </div>
+    <!-- ========= Tarjeta 2 ================= -->
+    <div class="col mb-4 ">
+        <div class="card">
+            <img src="assets/images/history.png" class="mx-auto d-block w-25 h-25">
+            <div class="card-body">
+                <h5 class="card-title">Historico de asistencias</h5>
+                <button [routerLink]="['/cliente/asistencias/historico', this.date ] " class="btn btn-success">
+                                            Ver historial
+                                        </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- </div> -->

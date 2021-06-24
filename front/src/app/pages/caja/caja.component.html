@@ -1,0 +1,38 @@
+<br>
+<div class="well text-left">
+    <h1>Movimientos de {{ persona.Nombres }} {{ persona.Apellidos }}</h1>
+</div>
+<button [routerLink]="['/caja/ingreso', persona.IdPersona]" type="button" class="btn waves-effect waves-light btn-rounded btn-primary" style="margin-top: 25px;margin-bottom: 25px;padding-right: 12px;margin-left: 800px;">
+    <i class="fa fa-plus"></i> 
+    Nuevo ingreso para {{ persona.Nombres }} {{ persona.Apellidos }}
+  </button>
+<br>
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Detalle</th>
+            <th>Monto</th>
+            <th>Plan</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <tr *ngFor="let movimiento of movimientosCliente">
+            <td>
+                {{ movimiento.Fecha | date:"dd/MM/yyyy" }}
+            </td>
+            <td>{{ movimiento.Descripcion}}</td>
+            <td>{{ movimiento.Monto }}</td>
+            <td>{{ movimiento.Plan }}</td>
+        </tr>
+    </tbody>
+</table>
+
+<button (click)="cambiarDesde(-5) " class="btn btn-secondary ">
+    Anteriores
+  </button>
+
+<button (click)="cambiarDesde(5) " class="btn btn-secondary " style="margin-left: 50px; ">
+      Siguientes
+  </button>

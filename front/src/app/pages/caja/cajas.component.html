@@ -1,0 +1,87 @@
+<br>
+<ul class="nav nav-tabs" id="tabCajas" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link" [routerLink]="['/cajas']" routerLinkActive="active">Caja general</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" [routerLink]="['/cajas/ingresos']" routerLinkActive="active">Ingresos</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" [routerLink]="['/cajas/egresos']" routerLinkActive="active">Egresos</a>
+    </li>
+</ul>
+
+<h1 class="well">Caja general </h1>
+<br>
+<div>
+    <label for="start">Fecha de Inicio : &nbsp;</label>
+    <input type="date" [(ngModel)]="FechaInicio" (ngModelChange)="cambiosFechaInicio($event)" required> &nbsp;&nbsp;&nbsp;&nbsp;
+
+    <label for="start">Fecha de Fin : &nbsp;</label>
+    <input type="date" [(ngModel)]="FechaFin" (ngModelChange)="cambiosFechaFin($event)" required> &nbsp; &nbsp;
+
+    <button [disabled]="controlFechas" (click)="refrescar()" class="btn waves-effect waves-light btn-rounded btn-primary ">
+        <span class="material-icons">
+        refresh
+        </span>
+    </button>
+
+</div>
+
+<br>
+
+<div class="form-group" *ngIf="controlFechas">
+    <p class="text-danger">
+        La fecha de inicio debe ser menor que la fecha de fin
+    </p>
+</div>
+
+<br>
+
+<div class="row ">
+    <div class="col-12 ">
+        <div class="card ">
+            <div class="card-body ">
+
+                <h3 class="card-title ">Movimientos registrados ( <small> {{ totalTransacciones }} </small> )</h3>
+
+                <table class="table table-hover ">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Apellidos</th>
+                            <th>Nombres</th>
+                            <th>Monto</th>
+                            <th>Cantidad</th>
+                            <th>Detalle</th>
+                            <th>Tipo</th>
+                            <!-- <th></th> -->
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr *ngFor="let transaccion of transacciones">
+                            <td>{{ transaccion.Fecha | date:"dd/MM/yyyy" }}</td>
+                            <td>{{ transaccion.Apellidos }}</td>
+                            <td>{{ transaccion.Nombres }}</td>
+                            <td>{{ transaccion.Monto }}</td>
+                            <td>{{ transaccion.Cantidad }}</td>
+                            <td>{{ transaccion.Descripcion }}</td>
+                            <td>{{ transaccion.Tipo }} </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+                <button (click)="cambiarDesde(-5) " class="btn btn-secondary ">
+                    Anteriores
+                  </button>
+
+                <button (click)="cambiarDesde(5) " class="btn btn-secondary " style="margin-left: 50px; ">
+                      Siguientes
+                  </button>
+            </div>
+        </div>
+
+    </div>
+
+</div>

@@ -1,0 +1,33 @@
+<div class="container">
+    <h1 class="well">Nuevo plan</h1>
+    <div class="col-lg-12 well">
+        <div class="row">
+            <form ngNativeValidate [formGroup]="forma" (ngSubmit)="altaPlan()">
+                <div class="col-sm-12">
+
+                    <div class="alert alert-primary" role="alert">
+                        <div class="row">
+                            <div class="col-sm-6 form-group">
+                                <label>Nombre de la plan</label>
+                                <input formControlName="Plan" name="Plan" required type="text" placeholder="Nombre" class="form-control">
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label>Precio</label><input formControlName="Precio" name="Precio" required type="money" placeholder="Precio" class="form-control">
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label>Cantidad de clases por mes</label><input formControlName="Cantidad" name="Cantidad" required type="number" min="1" max="31" step="1" placeholder="Cantidad" class="form-control">
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label>Descripcion </label>
+                                <textarea formControlName="Descripcion" name="Descripcion" type="textarea" placeholder="Descripcion" rows="3" class="form-control"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <button type="submit" class="btn btn-info btn-lg btn-block text-uppercase">Cargar plan</button>
+                    <br>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

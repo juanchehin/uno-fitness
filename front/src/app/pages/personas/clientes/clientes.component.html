@@ -1,0 +1,154 @@
+<div class="row animated fadeIn">
+    <div class="col-12">
+        <div class="card alert alert-primary">
+            <div class="row">
+                <div class="col-sm-6 form-group">
+                    <label>Apellidos: </label><input (keyup.enter)="buscarCliente( )" #input type="text" class="form-control" placeholder="Apellidos..." id="buscarApellidos">
+                </div>
+                <div class="col-sm-6 form-group">
+                    <label>Nombres:  </label><input (keyup.enter)="buscarCliente( )" #input type="text" class="form-control" placeholder="Nombres..." id="buscarNombres">
+                </div>
+                <div class="col-sm-6 form-group">
+                    <button (click)="buscarCliente( )" class="btn btn-primary">
+                        Consulta
+                        <i class="material-icons ">
+                            search
+                            </i>
+                        </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-6 form-group">
+        <label class="control-label">Filtrar por :  </label>
+        <select id="Planes" [(ngModel)]="planSeleccionado" (ngModelChange)="cambios($event)" class="browser-default custom-select">
+            <option selected value="-1"> Todos </option>
+            <option value="0"> Inscriptos en algun plan </option>
+            <option [value]="plan.IdPlan" *ngFor="let plan of planes" (change)="onChange($event.target.value)"> {{plan.Plan}} </option>
+        </select>
+    </div>
+    <div class="col-sm-6 form-group">
+        <div class="btn-group float-right" role="group" style="margin-top: 30px;">
+            <button [routerLink]="['/mantenimiento/cliente']" type="button" class="btn waves-effect waves-light btn-rounded btn-primary">
+                <i class="fa fa-plus"></i>
+                Nuevo Cliente
+                </button>
+
+            <button (click)="cargarClientes( )" class="btn btn-success">
+                    Actualizar lista
+                <i class="material-icons ">
+                    wifi_protected_setup
+                    </i>
+                </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+
+    <div class="col-12">
+        <div class="card">
+
+            <div class="card-body">
+
+                <div class="row">
+                    <div class="col-sm-6 form-group">
+                        <h3 class="card-title">Cantidad clientes ( <small> {{ totalClientes }} </small> )</h3>
+                    </div>
+                    <!-- <div class="float-right text-align:right"> -->
+
+                    <!-- </div> -->
+                </div>
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <!-- <th>Foto</th> -->
+                            <th>Apellidos</th>
+                            <th>Nombres</th>
+                            <th *ngIf="(planSeleccionado.toString() !== '-1')">Clases disponibles</th>
+                            <th *ngIf="(planSeleccionado.toString() === '0')">Plan</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <!-- <tr *ngFor="let cliente of clientes" [ngClass]="{'bg-danger text-warning':!cliente.ClasesDisponibles }"> -->
+                        <tr *ngFor="let cliente of clientes" [ngClass]="{'bg-danger text-warning': (cliente.ClasesDisponibles === 0) && (planSeleccionado === -1)}">
+
+                            <td>{{ cliente.Apellidos }}</td>
+                            <td>{{ cliente.Nombres }}</td>
+                            <!-- ================= Clases disponibles =================================== -->
+                            <td *ngIf="(planSeleccionado.toString() !== '-1')">
+                                {{ cliente.ClasesDisponibles }}
+                            </td>
+                            <!-- <td *ngIf="(cliente.IdPlan === 1) || (planSeleccionado.toString() !== '-1') ">
+                                -
+                            </td> -->
+                            <!-- ============================== Plan =================================== -->
+                            <td *ngIf="(planSeleccionado.toString() === '0')">
+                                {{ cliente.Plan }}
+                            </td>
+                            <!-- <td *ngIf="cliente.IdPlan === 1">
+                                -
+                            </td> -->
+                            <!-- ============================== Grupo de Botones =================================== -->
+                            <td>
+                                <div class=" btn-group " role="group " aria-label="Basic example ">
+                                    <button title="Marcar asistencia" *ngIf="planSeleccionado.toString() !== '-1'" (click)="marcarAsistencia(cliente.IdPersona)" class="btn btn-warning ">
+                                        <i class="material-icons">
+                                            assignment_turned_in
+                                            </i>
+                                    </button>
+
+                                    <button title="Mediciones" [routerLink]="[ '/cliente/mediciones', cliente.IdPersona] " class="btn btn-secondary ">
+                                        <i class="material-icons">
+                                            format_list_bulleted
+                                            </i>
+                                    </button>
+                                    <button title="Nuevo ingreso" [routerLink]="[ '/caja', cliente.IdPersona] " class="btn btn-success ">
+                                        <i class="material-icons ">
+                                            attach_money
+                                        </i>
+                                    </button>
+                                    <button title="Graficas" [routerLink]="[ '/cliente/graficas', cliente.IdPersona ] " class="btn btn-primary">
+                                        <i class="material-icons ">
+                                            insert_chart_outlined
+                                        </i>
+                                    </button>
+                                    <button title="Editar/Perfil" [routerLink]="[ '/mantenimiento/cliente/editar', cliente.IdPersona ] " class="btn btn-muted ">
+                                        <i class="material-icons ">
+                                            assignment_ind
+                                            </i>
+                                    </button>
+                                    <button title="Historial asistencias" [routerLink]="['/cliente/asistencias/historico', cliente.IdPersona ] " class="btn btn-info ">
+                                        <i class="material-icons ">
+                                            grading
+                                            </i>
+                                    </button>
+                                    <button title="Borrar cliente" (click)="eliminarCliente( cliente ) " class="btn btn-danger ">
+                                        <i class="material-icons ">
+                                        delete
+                                        </i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button (click)="cambiarDesde(-5) " class="btn btn-secondary ">
+                    Anteriores
+                  </button>
+
+                <button (click)="cambiarDesde(5) " class="btn btn-secondary " style="margin-left: 50px; ">
+                      Siguientes
+                  </button>
+            </div>
+        </div>
+
+    </div>
+
+</div>

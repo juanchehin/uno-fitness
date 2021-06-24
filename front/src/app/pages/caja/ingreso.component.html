@@ -1,0 +1,65 @@
+<div *ngIf="cantPlanes == 0" class="alert alert-success" role="alert">
+    <h4 class="alert-heading">Planes inexistentes!</h4>
+    <p>No existen planes activas en estos momentos.</p>
+    <hr>
+    <p class="mb-0">Debe agregar un plan en la seccion 'planes'.</p>
+</div>
+<br>
+
+<div class="container" *ngIf="cantPlanes !== 0">
+    <h1 class="well">Nuevo registro para {{ persona.Nombres }} {{ persona.Apellidos }}</h1>
+    <div class="col-lg-12 well">
+        <div>
+            <form ngNativeValidate [formGroup]="forma" (ngSubmit)="nuevaIngreso()">
+                <div class="col-sm-12 ">
+                    <div class="alert alert-secondary" role="alert">
+                        <div class="row">
+
+                            <div class="col-sm-6 form-group">
+                                <label class="control-label">Plan : </label>
+                                <select formControlName="IdPlan" class="form-control">
+                                    <option [value]="plan.IdPlan" *ngFor="let plan of planes">{{plan.Plan}}</option>
+                                </select>
+                            </div>
+
+                            <div class="col-sm-6 form-group">
+                                <label class="control-label">Cantidad : </label>
+                                <select formControlName="Cantidad" class="form-control">
+                                    <option value="1"> 1 </option>
+                                    <option value="2"> 2 </option>
+                                    <option value="3"> 3 </option>
+                                    <option value="4"> 4 </option>
+                                    <option value="5"> 5 </option>
+                                    <option value="6"> 6 </option>
+                                    <option value="7"> 7 </option>
+                                    <option value="8"> 8 </option>
+                                    <option value="9"> 9 </option>
+                                    <option value="10"> 10 </option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <label>Detalle</label>
+                        <input formControlName="Detalle" name="Detalle" type="text" placeholder="Detalle" class="form-control" style="padding-bottom: 50px;padding-top: 50px;border-bottom-width: 2px;">
+                    </div>
+                </div>
+                <br>
+                <button type="submit" class="btn btn-info btn-lg btn-block text-uppercase">Cargar registro</button>
+                <br>
+            </form>
+
+
+        </div>
+    </div>
+</div>
+
+<!-- <button [routerLink]="['/caja','ingreso']" type="button" class="btn waves-effect waves-light btn-rounded btn-primary" style="margin-right: 80px;margin-top: 15px;margin-bottom: 15px;">
+    <i class="fa fa-plus"></i> 
+    Nuevo ingreso
+  </button>
+
+<button [routerLink]="['/caja','egresos']" type="button" class="btn waves-effect waves-light btn-rounded btn-primary" style="margin-right: 80px;margin-top: 15px;margin-bottom: 15px;">
+    <i class="fa fa-plus"></i> 
+    Nuevo egreso
+  </button> -->

@@ -1,0 +1,47 @@
+<br>
+
+<div class="container">
+    <div class="row">
+        <div class="col-auto mr-auto">
+            <h1 class="well">Mediciones de {{ persona.Nombres }} {{ persona.Apellidos }}</h1>
+        </div>
+        <div class="col-md-4 ml-auto">
+            <button *ngIf="comprobarRol()" [routerLink]="[ '/cliente/medicion', termino ]" type="button" class="btn waves-effect waves-light btn-rounded btn-primary">
+            <i class="fa fa-plus"></i> 
+            Nueva medicion
+        </button>
+        </div>
+    </div>
+</div>
+<div *ngIf="totalRegistros === 0" class="alert alert-success" role="alert">
+    <h4 class="alert-heading">Mediciones inexistentes!</h4>
+    <p>El cliente no posee mediciones</p>
+    <hr>
+</div>
+<br>
+<div *ngIf="totalRegistros !== 0">
+    <div>
+        <select (change)="cargarGraficas($event.target.value)" class="custom-select">
+                <option *ngFor="let medicion of Mediciones">{{ medicion }}</option>
+            </select>
+    </div>
+
+
+    <div>
+        <div>
+            <div style="display: block">
+                <canvas height="80" baseChart [colors]="barChartColors" [datasets]="barChartData" [labels]="barChartLabels" [options]="barChartOptions" [plugins]="barChartPlugins" [legend]="barChartLegend" [chartType]="barChartType">
+                    </canvas>
+            </div>
+        </div>
+    </div>
+
+
+    <button (click)="cambiarDesde(-5)" class="btn btn-secondary">
+        Anteriores
+        </button>
+
+    <button (click)="cambiarDesde(5)" class="btn btn-secondary" style="margin-left: 50px; ">
+        Siguientes
+        </button>
+</div>

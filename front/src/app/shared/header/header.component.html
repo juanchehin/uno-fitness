@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+
+
+    <title>UnoFitness</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="/assets/css/animate.css">
+    <link rel="stylesheet" href="/assets/css/owl.carousel.min.css">
+
+    <!-- <link rel="stylesheet" href="/assets/fonts/ionicons/css/ionicons.min.css"> -->
+    <!-- <link rel="stylesheet" href="/assets/fonts/fontawesome/css/font-awesome.min.css"> -->
+    <!-- <link rel="stylesheet" href="/assets/fonts/flaticon/font/flaticon.css"> -->
+
+    <!-- Theme Style -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+
+</head>
+
+<body>
+    <header role="banner">
+        <nav class="navbar navbar-expand-lg  bg-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand " routerLinkActive="active" routerLink="/principal">UnoFitness</a>
+
+                <div class="collapse navbar-collapse" id="navbarsHeader">
+                    <ul class="nav nav-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link" routerLinkActive="active" routerLink="/principal">Inicio</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" routerLinkActive="active" routerLink="/acerca">Acerca de nosotros</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" routerLinkActive="active" routerLink="/profesionales">Profesionales</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" routerLinkActive="active" routerLink="/galeria">Galeria</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" routerLinkActive="active" routerLink="/contacto">Contacto</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" routerLinkActive="active" routerLink="/planes">Planes</a>
+                        </li>
+                        <!-- <li class="nav-item" *ngIf="!comprobarLogueo()">
+                            <a (click)="navegar()">
+                                <button class="btn waves-effect waves-light btn-rounded btn-primary "><i class="material-icons ">
+                                person
+                            </i>{{ correoActual }}</button>
+                            </a>
+                        </li> -->
+
+                    </ul>
+
+                </div>
+                <div class="text-right " *ngIf="!comprobarLogueo()">
+                    <button (click)="navegar()" class="btn waves-effect waves-light btn-rounded btn-primary "><i class="material-icons ">
+                        person
+                    </i>{{ correoActual }}</button>
+                </div>
+            </div>
+
+            <!-- <div class="float-right dropdown " *ngIf="!comprobarLogueo() && !comprobarRole()">
+
+                <button class="dropbtn " style="margin-right: 90px; margin-right: 200px; "><i class="material-icons ">
+                    person
+                </i>{{ correoActual }}</button>
+
+                <div class="dropdown-content " *ngIf="!comprobarRole() ">
+                    <li>
+                        <a [routerLink]="[ '/cliente' , 'mediciones' , IdPersona ]"><i class="material-icons ">accessibility</i>Mis mediciones</a>
+                        <a [routerLink]="[ '/cliente' , 'asistencias' , IdPersona ] "><i class="material-icons "> assignment_ind</i>Mis asistencias</a>
+                    </li>
+                    <a (click)="personaService.logout() "><i class="material-icons ">power_settings_new</i>     Salir</a>
+                </div>
+
+            </div> -->
+
+            <div class="text-right ">
+                <button *ngIf="comprobarLogueo() && paginaInicioSesion() " [routerLink]="[ '/login'] " type="button " class="btn waves-effect waves-light btn-rounded btn-primary ">
+                   
+                  Iniciar sesion
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js " integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN " crossorigin="anonymous "></script> -->
+    <script src="/assets/js/popper.min.js "></script>
+    <script src="/assets/js/bootstrap.min.js "></script>
+    <script src="/assets/js/owl.carousel.min.js "></script>
+    <script src="/assets/js/main.js "></script>
+
+</body>
+
+</html>

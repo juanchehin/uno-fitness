@@ -1,0 +1,50 @@
+<br>
+<div class="container">
+    <div class="row">
+        <div class="col-auto mr-auto">
+            <h1 class="well">Asistencias de {{ nombres }} {{ apellidos }}</h1>
+        </div>
+    </div>
+    <br>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+
+                <h3 class="card-title">Asistencias registradas ( <small> {{ totalAsistencias }} </small> )</h3>
+
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Plan</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr *ngFor="let asistencia of asistencias">
+                            <td>
+                                {{ asistencia.Fecha | date:"dd/MM/yyyy"}}
+                            </td>
+                            <td>
+                                {{ asistencia.Plan }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+        <br>
+        <button (click)="cambiarDesde(-5)" class="btn btn-secondary">
+            Anteriores
+          </button>
+
+        <button (click)="cambiarDesde(5)" class="btn btn-secondary" style="margin-left: 50px; ">
+              Siguientes
+          </button>
+        <br>
+    </div>
+</div>

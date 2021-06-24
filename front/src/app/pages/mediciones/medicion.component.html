@@ -1,0 +1,61 @@
+<br>
+<h3>Nueva medicion para {{ persona.Nombres }} {{ persona.Apellidos }}</h3>
+
+<form ngNativeValidate [formGroup]="forma" (ngSubmit)="nuevaMedicion()">
+    <br>
+    <div class="alert alert-primary">
+        <!-- *****************Primer fila ************************* -->
+        <div class="container">
+            <div class="row row-cols-3">
+                <div class="col">
+                    <label class="control-label">Realiza la medicion : </label>
+                    <!-- <div class="form-group"> -->
+                    <select class="custom-select" formControlName="IdProfesional" required>
+                        <option value="" disabled>Elija un entrenador</option>
+                        <option *ngFor="let profesional of profesionales" [ngValue]="profesional.IdPersona">{{ profesional.Nombres }} {{ profesional.Apellidos }}</option>
+                    </select>
+                    <!-- </div> -->
+                </div>
+            </div>
+        </div>
+        <!-- ***************** Segunda fila ************************* -->
+        <div class="container">
+            <div class="row row-cols-3">
+                <div class="col">
+                    <label>Altura (m)</label>
+                    <input pattern="^[0-9]+(.[0-9]+)?$" formControlName="Altura" name="Altura" required type="text" placeholder="Altura..." class="form-control">
+                </div>
+                <div class="col">
+                    <label>Peso (kg) </label>
+                    <input pattern="^[0-9]+(.[0-9]+)?$" formControlName="Peso" name="Peso" required type="text" placeholder="Peso..." class="form-control">
+                </div>
+                <div class="col">
+                    <label>IMC </label>
+                    <input pattern="^[0-9]+(.[0-9]+)?$" formControlName="IMC" required name="IMC" type="IMC" placeholder="IMC.." class="form-control">
+                </div>
+            </div>
+        </div>
+        <!-- ***************** Tercer fila ************************* -->
+        <div class="container">
+            <div class="row row-cols-3">
+                <div class="col">
+                    <label>Musc </label>
+                    <input pattern="^[0-9]+(.[0-9]+)?$" formControlName="Musc" required name="Musc" type="text" placeholder="Musc..." class="form-control">
+                </div>
+                <div class="col">
+                    <label>Grasa </label>
+                    <input pattern="^[0-9]+(.[0-9]+)?$" formControlName="Grasa" name="Grasa" type="text" placeholder="Grasa..." class="form-control">
+                </div>
+                <div class="col">
+                    <label>GV (Grasa viseral)</label>
+                    <input pattern="^[0-9]+(.[0-9]+)?$" required formControlName="GV" name="GV" type="text" placeholder="Ingrese GV..." class="form-control">
+                </div>
+            </div>
+            <!-- ***************** FIN Segunda fila ************************* -->
+        </div>
+    </div>
+    <!-- </div> -->
+    <br>
+    <button type="submit" class="btn btn-info btn-lg btn-block text-uppercase">Cargar Medicion</button>
+    <br>
+</form>

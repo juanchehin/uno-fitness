@@ -1,0 +1,30 @@
+<div class="container">
+    <h1 class="well">Perfil de {{ persona.Nombres }} {{ persona.Apellidos }}</h1>
+    <br>
+    <div class="row">
+        <div class="col-sm-6" *ngFor="let menu of menus ">
+            <div class="card">
+                <div class="card-body">
+                    <h2><i class="material-icons "> {{ menu.icono }}</i></h2>
+                    <h5 class="card-title">{{ menu.titulo }}</h5>
+                    <!-- <p class="card-text">With supporting text below as a natural lead-in to additional content.</p> -->
+                    <!-- <a [routerLink]="[ menu.url ]" class=" btn btn-primary ">Acceder</a> -->
+                    <a *ngIf="comprobarRol()" [routerLink]="[ menu.url ]" class=" btn btn-primary ">Acceder</a>
+                    <a *ngIf="!comprobarRol()" [routerLink]="[ menu.url , IdPersona ]" class=" btn btn-primary ">Acceder</a>
+                </div>
+            </div>
+            <br>
+        </div>
+        <div class="col-sm-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2><i class="material-icons ">power_settings_new</i></h2>
+                    <h5 class="card-title">Salir</h5>
+                    <button (click)="personaService.logout() " class=" btn btn-dark ">Salir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <br><br><br>
+</div>

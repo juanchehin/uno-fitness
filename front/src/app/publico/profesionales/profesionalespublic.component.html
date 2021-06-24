@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>UnoFitness</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700|Oxygen:400,700" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../../assets/css/animate.css">
+    <link rel="stylesheet" href="../../../assets/css/owl.carousel.min.css">
+    <link rel="stylesheet" href="../../../assets/css/jquery.fancybox.min.css">
+
+    <link rel="stylesheet" href="../../../assets/fonts/ionicons/css/ionicons.min.css">
+    <link rel="stylesheet" href="../../../assets/fonts/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../../../assets/fonts/flaticon/font/flaticon.css">
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="../../../assets/css/style.css">
+
+</head>
+
+<body>
+
+    <!--  ================================================================= -->
+    <!--  ============  Seccion fotos profesionales  ========================== -->
+    <!-- ================================================================== -->
+
+    <div *ngIf="!controlExistenciaProfesional()" class="alert alert-success" role="alert">
+        <h4 class="alert-heading">Profesionales inexistentes!</h4>
+        <p>No existen profesionales activos en estos momentos.</p>
+        <hr>
+        <p class="mb-0">Sin entrendores en UnoFitness.</p>
+    </div>
+    <br><br>
+
+    <div *ngIf="controlExistenciaProfesional()">
+        <div class="card animated fadeIn fast" *ngFor="let profesional of profesionales">
+            <div class="card-body">
+                <h4 class="card-title">{{profesional.Apellidos}} {{profesional.Nombres}}</h4>
+                <p class="card-text"> Email : {{profesional.Correo}}</p>
+            </div>
+        </div>
+    </div>
+    <br>
+    <script src="../../../assets/js/jquery-3.2.1.min.js"></script>
+    <script src="../../../assets/js/popper.min.js"></script>
+    <script src="../../../assets/js/bootstrap.min.js"></script>
+    <script src="../../../assets/js/owl.carousel.min.js"></script>
+    <script src="../../../assets/js/jquery.waypoints.min.js"></script>
+    <script src="../../../assets/js/jquery.fancybox.min.js"></script>
+    <script src="../../../assets/js/main.js"></script>
+</body>
+
+
+</html>

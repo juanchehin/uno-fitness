@@ -1,0 +1,105 @@
+<br>
+<div class="container">
+    <div class="row">
+        <div class="col-auto mr-auto">
+            <h1 class="well">Mediciones de {{ persona.Nombres }} {{ persona.Apellidos }}</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3 ml-md-auto">
+            <button *ngIf="comprobarRol()" [routerLink]="['/cliente/medicion', termino ]" type="button" class="btn waves-effect waves-light btn-rounded btn-primary">
+            <i class="fa fa-plus"></i> 
+            Nueva medicion
+            </button>
+        </div>
+    </div>
+    <br>
+</div>
+<div *ngIf=" totalRegistros === 0" class="alert alert-success" role="alert">
+    <h4 class="alert-heading">No posee mediciones</h4>
+    <p>No existen mediciones activas en estos momentos.</p>
+    <hr>
+    <p class="mb-0">Sin mediciones.</p>
+</div>
+
+
+<div class="row" *ngIf=" totalRegistros !== 0">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+
+                <h3 class="card-title">Mediciones registradas ( <small> {{ totalRegistros }} </small> )</h3>
+
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Altura</th>
+                            <th>Peso</th>
+                            <th>IMC</th>
+                            <th>Musc</th>
+                            <th>Grasa</th>
+                            <th>GV</th>
+                            <th>Realizada por</th>
+                            <th *ngIf="comprobarRol()"></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr *ngFor="let medicion of mediciones">
+                            <td>
+                                {{ medicion.Fecha | date:"dd/MM/yyyy"}}
+                            </td>
+                            <td>
+                                {{ medicion.Altura }}
+                            </td>
+                            <td>
+                                {{ medicion.Peso }}
+                            </td>
+                            <td>
+                                {{ medicion.IMC }}
+                            </td>
+                            <td>
+                                {{ medicion.Musc }}
+                            </td>
+                            <td>
+                                {{ medicion.Grasa }}
+                            </td>
+                            <td>
+                                {{ medicion.GV }}
+                            </td>
+                            <td>
+                                {{ medicion.Apellidos }} {{ medicion.Nombres }}
+                            </td>
+                            <td *ngIf="comprobarRol()">
+                                <button [routerLink]="['/cliente/medicion/editar', medicion.IdMedicion , date ]" class="btn btn-muted">
+                                    <i class="material-icons">
+                                        edit
+                                        </i>
+                                    </button>
+                                <button (click)="eliminarMedicion( medicion.IdMedicion )" class="btn btn-danger">
+                                        <i class="material-icons">
+                                        delete
+                                        </i>
+                                    </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+        <br>
+        <button (click)="cambiarDesde(-5)" class="btn btn-secondary">
+            Anteriores
+          </button>
+
+        <button (click)="cambiarDesde(5)" class="btn btn-secondary" style="margin-left: 50px; ">
+              Siguientes
+          </button>
+        <br>
+    </div>
+    <!-- <br><br> -->
+
+
+</div>

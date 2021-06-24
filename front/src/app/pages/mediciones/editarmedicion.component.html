@@ -1,0 +1,70 @@
+<br>
+<h3>Editar medicion para {{ persona.Nombres }} {{ persona.Apellidos }}</h3>
+
+<form ngNativeValidate [formGroup]="forma" (ngSubmit)="actualizaMedicion()">
+    <br>
+    <div class="alert alert-success">
+        <!-- *****************Primer fila ************************* -->
+        <div class="container">
+            <div class="row row-cols-3">
+                <div class="col">
+                    <label class="control-label">Realiza la medicion : </label>
+                    <div class="form-group">
+                        <select class="custom-select" formControlName="IdProfesional">
+                        <option value="" disabled> {{ NombreProf }} {{ ApellidoProf }}</option>
+                        <option *ngFor="let profesional of profesionales" [ngValue]="profesional.IdPersona">{{ profesional.Nombres }} {{ profesional.Apellidos }}</option>
+                    </select>
+                    </div>
+                </div>
+                <div class="col">
+                    <blockquote class="blockquote">
+                        <p class="mb-0">Fecha de realizacion : {{ Fecha | date:"dd/MM/yyyy"}} </p>
+                    </blockquote>
+                </div>
+            </div>
+            <!-- ***************** Segunda fila ************************* -->
+            <div class="container">
+                <div class="row row-cols-3">
+                    <div class="col">
+                        <label>Altura (m)</label>
+                        <input formControlName="Altura" [value]="Altura" name="Altura" required type="text" placeholder="Altura" class="form-control">
+                    </div>
+                    <div class="col">
+                        <label>Peso (kg) </label>
+                        <input formControlName="Peso" [value]="Peso" name="Peso" required type="text" placeholder="Peso" class="form-control">
+                    </div>
+                    <div class="col">
+                        <label>IMC </label>
+                        <input formControlName="IMC" [value]="IMC" required name="IMC" type="IMC" placeholder="IMC" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <!-- ***************** Tercer fila ************************* -->
+            <div class="container">
+                <div class="row row-cols-3">
+                    <div class="col">
+                        <label>Musc </label>
+                        <input formControlName="Musc" [value]="Musc" required name="Musc" type="text" placeholder="Musc" class="form-control">
+                    </div>
+                    <div class="col">
+                        <label>Grasa </label>
+                        <input formControlName="Grasa" [value]="Grasa" name="Grasa" type="text" placeholder="Grasa" class="form-control">
+                    </div>
+                    <div class="col">
+                        <label>GV (Grasa viseral)</label>
+                        <input required formControlName="GV" [value]="GV" name="GV" type="text" placeholder="Ingrese GV" class="form-control">
+                    </div>
+                </div>
+                <!-- ***************** FIN Segunda fila ************************* -->
+            </div>
+        </div>
+    </div>
+    <br>
+    <!-- <div class="col-6 col-md-4"> -->
+    <button type="submit" class="btn btn-primary btn-lg btn-block">Guardar cambios</button>
+    <!-- </div> -->
+    <br>
+</form>
+<!-- <button [routerLink]="['/mediciones', persona.IdPersona]" class="btn btn-info btn-lg btn-block text-uppercase">Nueva Medicion para {{ persona.Nombre }} {{ persona.Apellido }}</button> -->
+
+<!-- </div> -->

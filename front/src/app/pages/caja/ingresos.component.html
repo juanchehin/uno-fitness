@@ -1,0 +1,96 @@
+<br>
+<ul class="nav nav-tabs" id="tabCajas" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link" [routerLink]="['/cajas']">Caja general</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" [routerLink]="['/cajas/ingresos']" routerLinkActive="active">Ingresos</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" [routerLink]="['/cajas/egresos']" routerLinkActive="active">Egresos</a>
+    </li>
+</ul>
+
+
+
+<h1 class="well">Ingresos de caja</h1>
+
+<br>
+<div>
+    <label for="start">Fecha de Inicio : &nbsp;</label>
+
+    <input type="date" [(ngModel)]="FechaInicio" (ngModelChange)="cambiosFechaInicio($event)" required> &nbsp;&nbsp;&nbsp;&nbsp;
+    <label for="start">Fecha de Fin : &nbsp;</label>
+
+    <input type="date" [(ngModel)]="FechaFin" (ngModelChange)="cambiosFechaFin($event)" required> &nbsp; &nbsp;
+    <button [disabled]="controlFechas" (click)="refrescar()" class="btn waves-effect waves-light btn-rounded btn-primary "><span class="material-icons">
+        refresh
+        </span></button>
+
+</div>
+
+<br>
+
+<div class="form-group" *ngIf="controlFechas">
+    <p class="text-danger">
+        La fecha de inicio debe ser menor que la fecha de fin
+    </p>
+</div>
+
+<!-- <button [routerLink]="['/egreso']" type="button" class="btn waves-effect waves-light btn-rounded btn-primary " style="margin-left: 80px;margin-top: 15px;margin-bottom: 15px; ">
+    <i class="fa fa-plus "></i> 
+    Nuevo egreso
+  </button> -->
+
+<!-- Luego de presionar este boton debe aparecer un cartel que diga que debe seleccionar una persona -->
+<button [routerLink]="['/mantenimiento/clientes'] " type="button" (click)="mensajeIngreso()" class="btn waves-effect waves-light btn-rounded btn-primary " style="margin-top: 25px;margin-bottom: 25px;margin-left: 1000px;">
+    <i class="fa fa-plus "></i> 
+    Nuevo ingreso
+  </button>
+
+<div class="row ">
+    <div class="col-12 ">
+        <div class="card ">
+            <div class="card-body ">
+
+                <h3 class="card-title ">Ingresos registrados ( <small> {{ totalIngresos }} </small> )</h3>
+
+                <table class="table table-hover ">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Apellidos</th>
+                            <th>Nombres</th>
+                            <th>Plan</th>
+                            <th>Monto</th>
+                            <th>Cantidad</th>
+                            <th>Detalle</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr *ngFor="let ingreso of ingresos ">
+                            <td>{{ ingreso.Fecha | date:"dd/MM/yyyy" }}</td>
+                            <td>{{ ingreso.Apellidos }}</td>
+                            <td>{{ ingreso.Nombres }}</td>
+                            <td>{{ ingreso.Plan }}</td>
+                            <td>{{ ingreso.Monto }}</td>
+                            <td>{{ ingreso.Cantidad }}</td>
+                            <td>{{ ingreso.Descripcion }}</td>
+                        </tr>
+
+                    </tbody>
+                </table>
+                <button (click)="cambiarDesde(-5) " class="btn btn-secondary ">
+                    Anteriores
+                  </button>
+
+                <button (click)="cambiarDesde(5) " class="btn btn-secondary " style="margin-left: 50px;">
+                      Siguientes
+                  </button>
+            </div>
+        </div>
+
+    </div>
+
+</div>

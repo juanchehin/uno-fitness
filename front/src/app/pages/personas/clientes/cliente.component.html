@@ -1,0 +1,146 @@
+<div class="container">
+    <h1 class="well">Formulario de registro de clientes</h1>
+    <div class="col-lg-12 well">
+        <div class="row">
+            <form ngNativeValidate [formGroup]="forma" (ngSubmit)="registrarCliente()">
+                <div class="col-sm-12">
+
+
+                    <div class="alert alert-primary" role="alert">
+                        <div class="row">
+                            <div class="col-sm-6 form-group">
+                                <label>Apellidos</label>
+
+                                <input formControlName="Apellidos" name="Apellidos" required type="text" placeholder="Apellidos" class="form-control">
+
+                            </div>
+
+
+
+                            <div class="col-sm-6 form-group">
+                                <label>Nombres</label>
+                                <input formControlName="Nombres" name="Nombres" required type="text" placeholder="Nombres..." class="form-control">
+
+                                <div class="-gyroup">
+                                    <label required class="control-label">Sexo</label>
+                                    <select required class="form-control" formControlName="Sexo">
+                                    <option value="0">Hombre</option>
+                                    <option value="1">Mujer</option>
+                                </select>
+
+                                </div>
+                            </div>
+
+                            <div class="col-sm-6 form-group">
+                                <label>Documento </label>
+                                <input maxlength="11" size="11" required pattern="[0-9]*" formControlName="Documento" name="Documento" required type="text" placeholder="Documento" class="form-control">
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label><label  for="sex" class="control-label">Tipo de documentacion </label>
+                                <select required formControlName="IdTipoDocumento" class="form-control">
+                                <option value="1">DNI</option>
+                                <option value="2">Du</option>
+                                <option value="3">Pasaporte</option>
+                            </select></label>
+                            </div>
+
+
+                        </div>
+                        <div>
+                            <label for="start">Fecha de Nacimiento</label>
+                        </div>
+                        <div>
+                            <input type="date" name="FechaNac" formControlName="FechaNac" required>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label>Contraseña </label>
+                            <input formControlName="Password" required name="Password" type="password" placeholder="Contraseña" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Repetir contraseña </label>
+                            <input formControlName="Password2" required name="Password2" type="password" placeholder="Repetir contraseña" class="form-control">
+                        </div>
+
+                        <div class="form-group" *ngIf="forma.errors?.sonIguales && !forma.pristine">
+                            <p class="text-danger">
+                                Las contraseñas deben ser iguales
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Telefono </label>
+                            <input formControlName="Telefono" name="Telefono" type="text" placeholder="Telefono" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Email </label>
+                            <input required formControlName="Correo" name="Correo" type="email" placeholder="Ingrese Email" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Usuario </label>
+                            <input formControlName="Usuario" name="Usuario" type="text" placeholder="Usuario" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Objetivo </label>
+                            <textarea formControlName="Objetivo" name="Objetivo" placeholder="Objetivo" rows="3" class="form-control"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Ocupacion </label>
+                            <textarea formControlName="Ocupacion" name="Ocupacion" placeholder="Ocupacion" rows="3" class="form-control"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Horario </label>
+                            <input formControlName="Horario" name="Horario" placeholder="Horario" rows="3" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Observaciones </label>
+                            <textarea formControlName="Observaciones" name="Observaciones" placeholder="Observaciones" rows="3" class="form-control"></textarea>
+                        </div>
+                    </div>
+                    <div class="alert alert-dark" role="alert">
+
+
+                        <div class="row">
+                            <div class="col-sm-6 form-group">
+                                <label>Pais</label>
+                                <input formControlName="Pais" name="Pais" type="text" placeholder="Pais" class="form-control">
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label>Ciudad</label>
+                                <input formControlName="Ciudad" name="Ciudad" type="text" placeholder="Ciudad" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-6 form-group">
+                                <label>Calle</label>
+                                <input formControlName="Calle" name="Calle" type="text" placeholder="Calle" class="form-control">
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label>Numero</label>
+                                <input formControlName="Numero" name="Numero" type="text" placeholder="Numero" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-6 form-group">
+                                <label>Piso</label>
+                                <input formControlName="Piso" name="Piso" type="text" placeholder="Piso" class="form-control">
+                            </div>
+                            <div class="col-sm-6 form-group">
+                                <label>Departamento</label>
+                                <input formControlName="Departamento" name="Departamento" type="text" placeholder="Departamento" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <button type="submit" class="btn btn-info btn-lg btn-block text-uppercase">Cargar cliente</button>
+                    <br>
+                </div>
+
+
+            </form>
+        </div>
+    </div>
+</div>

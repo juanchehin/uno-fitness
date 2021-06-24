@@ -1,0 +1,37 @@
+{
+    "name": "server",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc -w",
+        "dev": "nodemon ./build",
+        "start": "node index.js" // Comando agregado para subir a HEROKU
+    },
+    "keywords": [],
+    "author": "Chehin Juan Martin",
+    "license": "ISC",
+    "dependencies": {
+        "@types/bcryptjs": "^2.4.2",
+        "bluebird": "^3.7.2",
+        "body-parser": "^1.19.0",
+        "cors": "^2.8.5",
+        "express": "^4.17.1",
+        "express-fileupload": "^1.1.6",
+        "fs": "0.0.1-security",
+        "jsonwebtoken": "^8.5.1",
+        "morgan": "^1.9.1",
+        "multer": "^1.4.2",
+        "promise-mysql": "^3.3.2",
+        "typescript": "^3.7.5"
+    },
+    "devDependencies": {
+        "@types/bcrypt": "^3.0.0",
+        "@types/cors": "^2.8.6",
+        "@types/express": "^4.17.2",
+        "@types/morgan": "^1.7.37",
+        "@types/mysql": "^2.15.8",
+        "nodemon": "^1.19.4"
+    }
+}
