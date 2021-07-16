@@ -1,14 +1,13 @@
 -- phpMyAdmin SQL Dump
--- version 5.0.2
+-- version 4.6.5.2
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 02, 2020 at 02:59 AM
--- Server version: 10.4.14-MariaDB
--- PHP Version: 7.4.9
+-- Generation Time: Nov 30, 2020 at 01:56 PM
+-- Server version: 10.1.21-MariaDB
+-- PHP Version: 5.6.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
 SET time_zone = "+00:00";
 
 
@@ -20,20 +19,55 @@ SET time_zone = "+00:00";
 --
 -- Database: `unofitness`
 --
-CREATE DATABASE IF NOT EXISTS `unofitness` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE DATABASE IF NOT EXISTS `unofitness` DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 USE `unofitness`;
 
 DELIMITER $$
 --
 -- Procedures
 --
+DROP PROCEDURE IF EXISTS `bsp_activar_cliente`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_activar_cliente` (`pIdPersona` SMALLINT)  SALIR:BEGIN
+	/*
+    Cambia el estado de un cliente a 'A' dado un IdPersona
+    SP usado para cuando el cliente existia en la BD pero estaba dado de baja
+    Devuelve OK o el mensaje de error en Mensaje.
+    */
+
+    
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		SHOW ERRORS;
+		-- SELECT 'Error en la transacción. Contáctese con el administrador.' Mensaje;
+		-- NULL AS Id;
+		ROLLBACK;
+	END;
+
+    -- Controla que el Documento sea obligatorio
+	IF pIdPersona = '' OR pIdPersona IS NULL THEN
+		SELECT 'Debe proveer un pIdPersona' AS Mensaje, NULL AS Id;
+		LEAVE SALIR;
+    END IF;
+-- Controla que no exista un documento con el mismo numero que este activo
+	IF NOT EXISTS (SELECT IdPersona FROM clientes WHERE IdPersona = pIdPersona) THEN
+			SELECT 'Cliente inexistente' AS Mensaje;
+			LEAVE SALIR;
+    END IF;
+
+-- Da de baja
+	UPDATE personas set EstadoPer = 'A' WHERE IdPersona = pIdPersona;
+    UPDATE clientes set EstadoCli = 'B' WHERE IdPersona = pIdPersona;
+    
+    SELECT 'Ok' AS Mensaje;
+END$$
+
 DROP PROCEDURE IF EXISTS `bsp_actualiza_estado_cliente`$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_actualiza_estado_cliente` (`pIdPersona` SMALLINT)  SALIR:BEGIN
 	/*
 	Procedimiento que se ejecuta cada vez que accede un cliente 
     para verificar su estado
     */
-    DECLARE pClasesDisponibles,pIdPlan smallint;
+    DECLARE pClasesDisponibles,pIdPlan,pCantidadMeses smallint;
     DECLARE pUltimoPago date;
     
 	SET pIdPlan = (SELECT IdPlan FROM clientes WHERE IdPersona = pIdPersona);
@@ -50,34 +84,42 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_actualiza_estado_cliente` (`pId
 		SELECT 'El cliente esta dado de baja' AS Mensaje;
 		LEAVE SALIR;
     END IF;
-    
-
--- Controla que no se le haya pasado el mes
-    /*IF DATE_ADD( (SELECT MAX(Fecha) FROM Transacciones WHERE IdPersona = pIdPersona), INTERVAL 1 MONTH) < CURDATE()  THEN
-		SELECT 'Plan vencido' AS Mensaje;
-        UPDATE	Clientes
-		SET		EstadoCli = 'B' , ClasesDisponibles = 0, IdPLan = 1
-		WHERE	IdPersona = pIdPersona;
-		LEAVE SALIR;
-    END IF;*/
-    
--- Controlo que pIdPersona tenga clases disponibles, si no la da de baja
-    /*IF ((SELECT ClasesDisponibles FROM Clientes WHERE IdPersona = pIdPersona)  <= 1) THEN
-		SELECT 'Plan actual agotado' AS Mensaje;
-        UPDATE	Clientes
-		SET		EstadoCli = 'B' , ClasesDisponibles = 0, IdPLan = 1
-		WHERE	IdPersona = pIdPersona;
-    END IF;*/
 
 -- Obtengo la ultima fecha en la cual pago (Empezo a asistir) a su plan
     SET pUltimoPago = (SELECT MAX(Fecha) 
 						FROM transacciones t
 						JOIN clientes c on t.IdPlanAbonado = c.IdPlan
-                        WHERE c.IdPersona = pIdPersona AND c.IdPlan = pIdPlan);
+                        WHERE t.IdPersona = pIdPersona AND t.IdPlanAbonado = pIdPlan);
+                        
+-- Obtengo la cantidad de meses que abono la ultima vez
+    /*SET pCantidadMeses = (SELECT Cantidad 
+						FROM transacciones t
+						JOIN clientes c on t.IdPlanAbonado = c.IdPlan
+                        WHERE c.IdPersona = pIdPersona AND c.IdPlan = pIdPlan
+                        HAVING MAX(t.IdTransaccion));*/
+	SET pCantidadMeses = (SELECT Cantidad 
+						FROM transacciones t
+						JOIN clientes c on t.IdPersona = c.IdPersona
+                        WHERE c.IdPersona = pIdPersona AND c.IdPlan = pIdPlan
+                        HAVING MAX(t.IdTransaccion));
+                        
+-- Si la cantidad de meses que pago la ultima vez supera la fecha actual, lo da de baja
+    IF (DATE_ADD(pUltimoPago,INTERVAL pCantidadMeses MONTH) < NOW()) THEN
+		SELECT 'Se vencieron los meses de credito para el cliente' AS Mensaje;
+			UPDATE	Clientes
+			SET		EstadoCli = 'B' , ClasesDisponibles = 0, MesesCredito = 0,IdPlan = 1
+			WHERE	IdPersona = pIdPersona;
+		LEAVE SALIR;
+    END IF;
 
 -- Controlo si pIdPersona tiene meses de credito disponible y no le quedaron clases disponibles
 -- , de ser asi, se setean las nuevas clases disponibles
-    IF (((SELECT MesesCredito FROM Clientes WHERE IdPersona = pIdPersona)  != 0 ) AND ((SELECT ClasesDisponibles FROM Clientes WHERE IdPersona = pIdPersona) <= 0 )) THEN
+    IF (
+    ((SELECT MesesCredito FROM Clientes WHERE IdPersona = pIdPersona)  != 0 ) 
+    AND 
+    ((SELECT ClasesDisponibles FROM Clientes WHERE IdPersona = pIdPersona) <= 0 )
+    )
+    THEN
     SELECT 'Tiene meses de credito' AS Mensaje;
 		-- Pregunto si paso el mes desde que pago, si es asi, se actualiza su mes de credito
 		IF (pUltimoPago < now()) THEN
@@ -131,7 +173,7 @@ END IF;
 END$$
 
 DROP PROCEDURE IF EXISTS `bsp_actualiza_profesional`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_actualiza_profesional` (`pIdPersona` INT(11), `pIdTipoDocumento` INT(11), `pIdRol` CHAR(1), `pApellidos` VARCHAR(60), `pNombres` VARCHAR(60), `pDocumento` INT(11), `pPassword` CHAR(32), `pTelefono` VARCHAR(30), `pSexo` CHAR(1), `pObservaciones` VARCHAR(250), `pFechaNac` DATE, `pCorreo` VARCHAR(50), `pUsuario` VARCHAR(60), `pCalle` VARCHAR(60), `pPiso` INT(11), `pDepartamento` VARCHAR(10), `pCiudad` VARCHAR(60), `pPais` VARCHAR(60), `pNumero` INT(11), `pEstado` CHAR(1))  SALIR:BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_actualiza_profesional` (`pIdPersona` INT(11), `pIdTipoDocumento` INT(11), `pIdRol` CHAR(1), `pApellidos` VARCHAR(60), `pNombres` VARCHAR(60), `pDocumento` CHAR(10), `pPassword` CHAR(32), `pTelefono` VARCHAR(30), `pSexo` CHAR(1), `pObservaciones` VARCHAR(250), `pFechaNac` DATE, `pCorreo` VARCHAR(50), `pUsuario` VARCHAR(60), `pCalle` VARCHAR(60), `pPiso` INT(11), `pDepartamento` VARCHAR(10), `pCiudad` VARCHAR(60), `pPais` VARCHAR(60), `pNumero` INT(11), `pEstado` CHAR(1))  SALIR:BEGIN
 	/*
     Permite actualizar un profesional, dado su IdPersona, con todos sus datos.
     Si la contraseña es NULL entonces no se modifica    
@@ -176,47 +218,48 @@ IF (SELECT Correo FROM Personas WHERE IdPersona = pIdPersona ) != pCorreo THEN
 END IF;
 
 -- Controla que no exista una persona con ese usuario
-IF (SELECT Usuario FROM Personas WHERE IdPersona = pIdPersona ) != pUsuario THEN
+IF ((SELECT Usuario FROM Personas WHERE IdPersona = pIdPersona ) != pUsuario) THEN
 	IF (SELECT Usuario FROM Personas WHERE Usuario = pUsuario) THEN
 		SELECT 'Ya existe una persona con ese usuario' AS Mensaje;
 		LEAVE SALIR;
     END IF;
 END IF;
 
--- Actualizo
-   	UPDATE Personas SET IdTipoDocumento = pIdTipoDocumento WHERE IdPersona = pIdPersona;
-	UPDATE Personas SET Apellidos = pApellidos WHERE IdPersona = pIdPersona;
-	UPDATE Personas SET Nombres = pNombres WHERE IdPersona = pIdPersona;
-	UPDATE Personas SET Documento = pDocumento WHERE IdPersona = pIdPersona;
-	UPDATE Personas SET IdRol = pIdRol WHERE IdPersona = pIdPersona;
     
 -- Si no se selecciono una CONTRASEÑA o viene vacia , entonces se deja como estaba
 	IF pPassword != '' OR pPassword IS NOT NULL THEN
 		UPDATE Personas SET Password = MD5(pPassword) WHERE IdPersona = pIdPersona;
     END IF;	
-    
-	UPDATE Personas SET Sexo = pSexo WHERE IdPersona = pIdPersona;
 
 -- Si no se selecciono una fecha de nacimiento  o viene vacia , entonces se deja como estaba
-	IF pFechaNac != '' OR pFechaNac = '0000-00-00' OR pFechaNac IS NOT NULL THEN
+	IF (pFechaNac IS NOT NULL) THEN
 		UPDATE Personas SET FechaNac = pFechaNac WHERE IdPersona = pIdPersona;
     END IF;	
-    
+
+-- Actualizo
+   	UPDATE Personas SET IdTipoDocumento = pIdTipoDocumento WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET IdRol = pIdRol WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Apellidos = pApellidos WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Nombres = pNombres WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Documento = pDocumento WHERE IdPersona = pIdPersona;
+    UPDATE Personas SET Telefono = pTelefono WHERE IdPersona = pIdPersona;
+    UPDATE Personas SET Sexo = pSexo WHERE IdPersona = pIdPersona;
 	UPDATE Personas SET Correo = pCorreo WHERE IdPersona = pIdPersona;
 	UPDATE Personas SET Usuario = pUsuario WHERE IdPersona = pIdPersona;
 	UPDATE Personas SET Calle = pCalle WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Numero = pNumero WHERE IdPersona = pIdPersona;
 	UPDATE Personas SET Piso = pPiso WHERE IdPersona = pIdPersona;
 	UPDATE Personas SET Departamento = pDepartamento WHERE IdPersona = pIdPersona;
 	UPDATE Personas SET Ciudad = pCiudad WHERE IdPersona = pIdPersona;
 	UPDATE Personas SET Pais = pPais WHERE IdPersona = pIdPersona;
-	UPDATE Personas SET Numero = pNumero WHERE IdPersona = pIdPersona;
     UPDATE Personas SET EstadoPer = pEstado WHERE IdPersona = pIdPersona;
+    UPDATE Personas SET Observaciones = pObservaciones WHERE IdPersona = pIdPersona;
     
 	SELECT 'Ok' AS Mensaje;
 END$$
 
 DROP PROCEDURE IF EXISTS `bsp_alta_cliente`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_cliente` (`pIdTipoDocumento` INT(11), `pApellidos` VARCHAR(60), `pNombres` VARCHAR(60), `pDocumento` INT(11), `pPassword` CHAR(32), `pTelefono` VARCHAR(30), `pSexo` CHAR(1), `pObservaciones` VARCHAR(250), `pFechaNac` DATE, `pCorreo` VARCHAR(50), `pUsuario` VARCHAR(60), `pCalle` VARCHAR(60), `pPiso` INT(11), `pDepartamento` VARCHAR(10), `pCiudad` VARCHAR(60), `pPais` VARCHAR(60), `pNumero` INT(11), `pObjetivo` VARCHAR(60), `pOcupacion` VARCHAR(60), `pHorario` VARCHAR(60))  SALIR:BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_cliente` (`pIdTipoDocumento` INT(11), `pApellidos` VARCHAR(60), `pNombres` VARCHAR(60), `pDocumento` CHAR(11), `pPassword` CHAR(32), `pTelefono` VARCHAR(30), `pSexo` CHAR(1), `pObservaciones` VARCHAR(250), `pFechaNac` DATE, `pCorreo` VARCHAR(50), `pUsuario` VARCHAR(60), `pCalle` VARCHAR(60), `pPiso` INT(11), `pDepartamento` VARCHAR(10), `pCiudad` VARCHAR(60), `pPais` VARCHAR(60), `pNumero` INT(11), `pObjetivo` VARCHAR(60), `pOcupacion` VARCHAR(60), `pHorario` VARCHAR(60))  SALIR:BEGIN
 	/*
     Permite dar de alta un cliente controlando que el email no exista ya. 
     La da de alta al final del orden, con estado B: Baja. (Hasta que se inscribe en algun plan)
@@ -227,16 +270,16 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_cliente` (`pIdTipoDocument
     */
 	DECLARE pIdPersona,pIdCliente,pClasesDisponibles,pIdAsistencia smallint;
 	-- Manejo de error en la transacción
-	/*DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		SHOW ERRORS;
-		SELECT 'Error en la transacción. Contáctese con el administrador.' Mensaje;
+		-- SELECT 'Error en la transacción. Contáctese con el administrador.' Mensaje;
 		-- NULL AS Id;
 		ROLLBACK;
-	END;*/
+	END;
     -- Controla que el correo sea obligatorio 
 	IF pCorreo = '' OR pCorreo IS NULL THEN
-		SELECT 'Debe proveer un nombre para el correo' AS Mensaje, NULL AS Id;
+		SELECT 'Debe proveer un nombre para el correo' AS Mensaje;
 		LEAVE SALIR;
     END IF;
     
@@ -249,19 +292,19 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_cliente` (`pIdTipoDocument
     
     -- Controla que el Documento sea obligatorio
 	IF pDocumento = '' OR pDocumento IS NULL THEN
-		SELECT 'Debe proveer un documento' AS Mensaje, NULL AS Id;
+		SELECT 'Debe proveer un documento' AS Mensaje;
 		LEAVE SALIR;
     END IF;
 
     -- Controla que el Documento sea obligatorio
 	IF pApellidos = '' OR pApellidos IS NULL THEN
-		SELECT 'Debe proveer un Apellido' AS Mensaje, NULL AS Id;
+		SELECT 'Debe proveer un Apellido' AS Mensaje;
 		LEAVE SALIR;
     END IF;
     
     -- Controla que el Documento sea obligatorio
 	IF pNombres = '' OR pNombres IS NULL THEN
-		SELECT 'Debe proveer un Nombre' AS Mensaje, NULL AS Id;
+		SELECT 'Debe proveer un Nombre' AS Mensaje;
 		LEAVE SALIR;
     END IF;
     
@@ -269,27 +312,17 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_cliente` (`pIdTipoDocument
 	IF EXISTS (SELECT Correo FROM personas WHERE Correo = pCorreo) THEN
 		-- Esta dada de baja ?
         IF (SELECT EstadoPer FROM Personas WHERE Correo = pCorreo) = 'B' THEN
-			SELECT 'Correo existente el la BD, dado de baja' AS Mensaje;
+			SELECT 'La persona ya se encuentra cargada' AS Mensaje;
 			SELECT IdPersona FROM personas WHERE Correo = pCorreo;
 			LEAVE SALIR;
 		END IF;
     END IF;
 
 -- Controla que una persona no exista previamente con estado 'B'
-	IF EXISTS (SELECT Usuario FROM personas WHERE Usuario = pUsuario) THEN
-		-- Esta dada de baja ?
-        IF (SELECT EstadoPer FROM Personas WHERE Usuario = pUsuario) = 'B' THEN
-			SELECT 'Existente el la BD' AS Mensaje;
-			SELECT IdPersona FROM personas WHERE Usuario = pUsuario;
-			LEAVE SALIR;
-		END IF;
-    END IF; 
-     
--- Controla que una persona no exista previamente con estado 'B'
 	IF EXISTS (SELECT Documento FROM personas WHERE Documento = pDocumento) THEN
 		-- Esta dada de baja ?
         IF (SELECT EstadoPer FROM Personas WHERE Documento = pDocumento) = 'B' THEN
-			SELECT 'Existente el la BD' AS Mensaje;
+			SELECT 'La persona ya se encuentra cargada' AS Mensaje;
             SELECT IdPersona FROM personas WHERE Documento = pDocumento;
 			LEAVE SALIR;
 		END IF;
@@ -297,11 +330,8 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_cliente` (`pIdTipoDocument
 
     -- Controla que no exista un documento con el mismo numero que este activo
 	IF EXISTS (SELECT Documento FROM personas WHERE Documento = pDocumento) THEN
-		-- Esta dada de 
-        IF (SELECT EstadoPer FROM Personas WHERE Documento = pDocumento) = 'A' THEN
 			SELECT 'Ya existe un documento con ese numero' AS Mensaje;
 			LEAVE SALIR;
-		END IF;
     END IF;
     
     -- Controla que no exista una persona con el mismo correo, '1' para rol de cliente
@@ -482,23 +512,23 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_ingreso` (`pIdPersona` INT
 
 
 START TRANSACTION;
--- Controlo si el esta asistiendo a algun plan
+-- Controlo si esta asistiendo a algun plan
 	IF (SELECT IdPlan FROM Clientes WHERE IdPersona = pIdPersona) != 1 THEN
 		-- Si esta asistiendo a algun plan, ¿Es pIdPlan?
 		IF (SELECT IdPlan FROM Clientes WHERE IdPersona = pIdPersona) = pIdPlan THEN
-			-- Si es asi, entonces sumo como meses de credito
-			UPDATE Clientes SET mesesCredito = (SELECT mesesCredito FROM Clientes WHERE IdPersona = pIdPersona) + pCantidad;
+			-- Si es asi, entonces sumo como meses de credito (menos 1 por empezar a contar el mes actual)
+			UPDATE Clientes SET mesesCredito = ((SELECT mesesCredito FROM Clientes WHERE IdPersona = pIdPersona) + (pCantidad - 1))
+            WHERE IdPersona = pIdPersona;
 		ELSE
-			-- Select 'Debe esperar a que venza el plan actual para poder empezar con el siguiente' AS Mensaje;
             -- No esta asistiendo a pIdPlan, entonces actualizo el plan al cual asistira
             UPDATE	Clientes 
-			SET		IdPlan = pIdPlan,ClasesDisponibles = pClasesDisponibles,MesesCredito = pCantidad,EstadoCli = 'A'
+			SET		IdPlan = pIdPlan,ClasesDisponibles = pClasesDisponibles,MesesCredito = (pCantidad - 1),EstadoCli = 'A'
 			WHERE	IdPersona = pIdPersona;
 		END IF;
 	ELSE
 -- Si el cliente no esta asistiendo a algun plan, entonces cargo el nuevo plan
 		UPDATE 	Clientes 
-		SET 	IdPlan = pIdPlan,ClasesDisponibles = pClasesDisponibles,EstadoCli = 'A',MesesCredito = pCantidad
+		SET 	IdPlan = pIdPlan,ClasesDisponibles = pClasesDisponibles,EstadoCli = 'A',MesesCredito = (pCantidad - 1)
 		WHERE 	IdPersona = pIdPersona;
 	
 	END IF;
@@ -550,7 +580,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_medicion` (`pIdCliente` IN
         
   		SET pIdMedicion = 1 + (SELECT COALESCE(MAX(IdMedicion),0) FROM Mediciones);
 		INSERT INTO Mediciones(IdMedicion,IdCliente,IdProfesional,Fecha,Altura,Peso,IMC,Musc,Grasa,GV,EstadoMed) VALUES(pIdMedicion,pIdCliente,pIdProfesional,CURDATE(),pAltura,pPeso,pIMC,pMusc,pGrasa,pGV,'A');
-		SELECT 'OK' AS Mensaje;
+		SELECT 'Ok' AS Mensaje;
     COMMIT;
 END$$
 
@@ -589,7 +619,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_plan` (`pPlan` VARCHAR(60)
 END$$
 
 DROP PROCEDURE IF EXISTS `bsp_alta_profesional`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_profesional` (`pIdTipoDocumento` INT(11), `pIdRol` INT, `pApellidos` VARCHAR(60), `pNombres` VARCHAR(60), `pDocumento` INT(11), `pPassword` CHAR(32), `pTelefono` VARCHAR(30), `pSexo` CHAR(1), `pObservaciones` VARCHAR(250), `pFechaNac` DATE, `pCorreo` VARCHAR(50), `pUsuario` VARCHAR(60), `pCalle` VARCHAR(60), `pPiso` INT(11), `pDepartamento` VARCHAR(10), `pCiudad` VARCHAR(60), `pPais` VARCHAR(60), `pNumero` INT(11))  SALIR:BEGIN
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_profesional` (`pIdTipoDocumento` INT(11), `pIdRol` INT, `pApellidos` VARCHAR(60), `pNombres` VARCHAR(60), `pDocumento` CHAR(11), `pPassword` CHAR(32), `pTelefono` VARCHAR(30), `pSexo` CHAR(1), `pObservaciones` VARCHAR(250), `pFechaNac` DATE, `pCorreo` VARCHAR(50), `pUsuario` VARCHAR(60), `pCalle` VARCHAR(60), `pPiso` INT(11), `pDepartamento` VARCHAR(10), `pCiudad` VARCHAR(60), `pPais` VARCHAR(60), `pNumero` INT(11))  SALIR:BEGIN
 	/*
     Permite dar de alta un profesional controlando que el email no exista ya. 
     La da de alta al final del orden, con estado A: Activa. 
@@ -606,7 +636,13 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_profesional` (`pIdTipoDocu
 	END;
     -- Controla que el correo sea obligatorio 
 	IF pCorreo = '' OR pCorreo IS NULL THEN
-		SELECT 'Debe proveer un nombre para el correo' AS Mensaje, NULL AS Id;
+		SELECT 'Debe proveer un nombre para el correo' AS Mensaje;
+		LEAVE SALIR;
+    END IF;
+    
+    -- Controla que el pUsuario sea obligatorio 
+	IF pUsuario = '' OR pUsuario IS NULL THEN
+		SELECT 'Debe proveer un nombre de usuario' AS Mensaje;
 		LEAVE SALIR;
     END IF;
     
@@ -631,6 +667,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_profesional` (`pIdTipoDocu
 -- Controla que no exista un documento con el mismo numero
 	IF EXISTS(SELECT Documento FROM Personas WHERE Documento = pDocumento) THEN
 		SELECT 'Ya existe un Documento con ese numero' AS Mensaje;
+        SELECT pDocumento AS pDocumento;
 		LEAVE SALIR;
     END IF;
     
@@ -650,68 +687,109 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_profesional` (`pIdTipoDocu
 
 END$$
 
-DROP PROCEDURE IF EXISTS `bsp_dame_asistencias`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_asistencias` (`pIdPersona` SMALLINT)  SALIR:BEGIN
-	DECLARE pSalida smallint;
+DROP PROCEDURE IF EXISTS `bsp_alta_transaccion`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_alta_transaccion` (`pIdPersona` INT(11), `pIdPlan` INT(11), `pDetalle` VARCHAR(60))  SALIR:BEGIN
 	/*
-	Procedimiento que sirve para instanciar una persona desde la base de datos.
+    Permite dar de alta un Transaccion (ingreso de caja)
     */
-    IF NOT EXISTS(SELECT * FROM	personas WHERE IdPersona = pIdPersona ) THEN
-		SELECT 'La persona no existe!' AS Mensaje;
-		LEAVE SALIR;
-    END IF;
+	DECLARE pIdTransaccion,pMonto,pIdAsistencia,pClasesDisponibles smallint;
     
-	SELECT	*
-    FROM	personas
-    WHERE	IdPersona = pIdPersona;
-END$$
-
-DROP PROCEDURE IF EXISTS `bsp_dame_clasesDisponibles`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_clasesDisponibles` (`pIdPersona` SMALLINT, `pIdPlan` INT)  SALIR:BEGIN
-	/*
-	Procedimiento que sirve para instanciar una asistencia desde la base de datos.
-    */
+	-- Manejo de error en la transacción
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
 		SHOW ERRORS;
 		-- SELECT 'Error en la transacción. Contáctese con el administrador.' Mensaje;
-		-- NULL AS Id;
 		ROLLBACK;
 	END;
     
--- Controla la existencia de la persona FUNCIONA
-    IF NOT EXISTS(SELECT IdPersona FROM personas WHERE IdPersona = pIdPersona ) THEN
-		SELECT 'La persona no existe' AS Mensaje;
-		LEAVE SALIR;
-    END IF;
-
--- Controla la persona no este dada de baja
-    IF (SELECT EstadoPer FROM personas WHERE IdPersona = pIdPersona ) = 'B' THEN
-		SELECT 'La persona esta dada de baja' AS Mensaje;
+-- Controla que el Cliente/Persona exista y sea obligatorio 
+	IF pIdPersona = '' OR pIdPersona IS NULL THEN
+		SELECT 'Debe proveer una persona' AS Mensaje, NULL AS Id;
 		LEAVE SALIR;
     END IF;
     
--- Controla la existencia del plan
-    IF NOT EXISTS(SELECT IdPlan FROM planes WHERE IdPlan = pIdPlan )THEN
-		SELECT 'El plan no existe' AS Mensaje;
+	IF NOT EXISTS (SELECT IdPersona FROM Clientes WHERE IdPersona = pIdPersona) THEN
+		SELECT 'Cliente inexistente' AS Mensaje;
 		LEAVE SALIR;
     END IF;
 
--- Controla el plan no este dado de baja
-    IF (SELECT EstadoPlan FROM planes WHERE IdPlan = pIdPlan ) = 'B' THEN
-		SELECT 'El plan esta dado de baja' AS Mensaje;
+	IF NOT EXISTS (SELECT IdPlan FROM Planes WHERE IdPlan = pIdPlan) THEN
+		SELECT 'Plan inexistente' AS Mensaje;
 		LEAVE SALIR;
     END IF;
+    
+	START TRANSACTION;
+		SET pIdTransaccion = 1 + (SELECT COALESCE(MAX(IdTransaccion),0) FROM Transacciones);
+		SET pIdAsistencia = 1 + (SELECT COALESCE(MAX(IdAsistencia),0) FROM Asistencias);
+		SET pMonto = (SELECT Precio FROM planes WHERE IdPlan = pIdPlan);
+        SET pClasesDisponibles = (SELECT CantClases FROM planes WHERE IdPlan = pIdPlan);
 
--- Controla que la persona tenga contratado ese plan
-      IF NOT EXISTS(SELECT * FROM Asistencias WHERE (IdPersona = pIdPersona AND IdPlan != pIdPlan)) THEN
-		SELECT 'La persona con ese plan no existe!' AS Mensaje;
-		LEAVE SALIR;
-    END IF;  
+		INSERT INTO Transacciones(IdTransaccion,IdPersona,Descripcion,Monto,Fecha,Tipo) VALUES(pIdTransaccion,pIdPersona,pDescripcion,pMonto,CURDATE(),'Ingreso');
+		INSERT INTO Asistencias(IdAsistencia,IdPersona,IdPlan,Fecha,ClasesDisponibles) VALUES(pIdAsistencia,pIdPersona,pIdPlan,CURDATE(),pClasesDisponibles);
 
-	SELECT	*
-    FROM	asistencias a
-    WHERE	(IdPersona = pIdPersona AND IdPlan = pIdPlan);
+		SELECT 'Ok' AS Mensaje;
+
+    COMMIT;
+END$$
+
+DROP PROCEDURE IF EXISTS `bsp_buscar_cliente_plan_estado`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_buscar_cliente_plan_estado` (`pApellidos` VARCHAR(50), `pNombres` VARCHAR(50), `pIdPlan` INT)  SALIR:BEGIN
+	/*
+	Procedimiento que sirve para buscar un cliente por su nombres y/o apellidos segun coincidencia
+    Filtra por plan y por estado
+    pIncluyeBajas: 'S' Todos los clientes o 'N' solo los dados de alta
+    Solo muestra las PERSONAS dadas de alta
+    Todos: -1
+    Inscriptos en algun plan : 0
+    Plan 1 : Plan por defecto, indica que no esta inscripto en ningun plan
+    */
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		SHOW ERRORS;
+		--  SELECT 'Error en la transacción. Contáctese con el administrador.' Mensaje;
+		ROLLBACK;
+	END;
+    
+-- Muestra los inscriptos en algun plan en especifico
+	IF (pIdPlan != 0 AND pIdPlan != -1 AND pIdPlan != 1) THEN
+		SELECT		p.IdPersona,p.Apellidos,p.Nombres,c.ClasesDisponibles,'' AS Plan
+		FROM		(personas p JOIN clientes c ON p.IdPersona = c.IdPersona)
+		WHERE		EstadoPer = 'A' AND c.IdPlan = pIdPlan AND (Nombres LIKE CONCAT('%',pNombres,'%') and Apellidos LIKE CONCAT('%',pApellidos,'%'))
+		ORDER BY	Apellidos asc;
+        
+        SELECT 		COUNT(p.IdPersona) AS cantCli
+		FROM		(personas p JOIN clientes c ON p.IdPersona = c.IdPersona)
+		WHERE		EstadoPer = 'A' AND c.IdPlan = pIdPlan AND (Nombres LIKE CONCAT('%',pNombres,'%') and Apellidos LIKE CONCAT('%',pApellidos,'%'));
+	END IF;
+    
+-- Sin filtro de planes , muestra todos los clientes activos de todos los planes
+	IF (pIdPlan = 0 AND pIdPlan != 1) THEN
+		SELECT		p.IdPersona,p.Apellidos,p.Nombres,pl.Plan,c.ClasesDisponibles
+		FROM		((personas p JOIN clientes c ON p.IdPersona = c.IdPersona) JOIN planes pl ON pl.IdPlan = c.IdPlan)
+		WHERE		EstadoPer = 'A' AND (Nombres LIKE CONCAT('%',pNombres,'%') and Apellidos LIKE CONCAT('%',pApellidos,'%'))
+		ORDER BY	Apellidos asc;
+ --   	LIMIT 		pDesde,5;
+
+        SELECT 		COUNT(p.IdPersona) AS cantCli
+		FROM		(personas p JOIN clientes c ON p.IdPersona = c.IdPersona)
+		WHERE		EstadoPer = 'A' AND (Nombres LIKE CONCAT('%',pNombres,'%') and Apellidos LIKE CONCAT('%',pApellidos,'%')); 
+	END IF;
+
+-- Busca entre todos los clientes
+	IF (pIdPlan = -1 ) THEN
+		SELECT		p.IdPersona,p.Apellidos,p.Nombres,c.ClasesDisponibles,'' AS Plan
+		FROM		(personas p JOIN clientes c ON p.IdPersona = c.IdPersona)
+		WHERE		EstadoPer = 'A' AND (Nombres LIKE CONCAT('%',pNombres,'%') and Apellidos LIKE CONCAT('%',pApellidos,'%') )
+		ORDER BY	apellidos asc;
+--     	LIMIT 		pDesde,5;
+		
+        -- Entrega la cantidad de clientes
+        SELECT 		COUNT(p.IdPersona) AS cantCli
+		FROM		(personas p JOIN clientes c ON p.IdPersona = c.IdPersona)
+		WHERE		EstadoPer = 'A' AND (Nombres LIKE CONCAT('%',pNombres,'%') and Apellidos LIKE CONCAT('%',pApellidos,'%')); 
+	END IF;
+    
+	-- SELECT valido; 
 END$$
 
 DROP PROCEDURE IF EXISTS `bsp_dame_medicion`$$
@@ -733,8 +811,9 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_medicion` (`pIdMedicion` S
 		LEAVE SALIR;
     END IF;
     
-    SELECT		IdMedicion,Fecha,Altura,Peso,IMC,Musc,Grasa,GV
-    FROM		Mediciones
+    SELECT		m.IdMedicion,m.Fecha,m.Altura,m.Peso,m.IMC,m.Musc,m.Grasa,m.GV,p.Apellidos as ApellidosProf,p.Nombres as NombresProf,m.IdProfesional
+	FROM		Mediciones m
+				LEFT JOIN personas p ON m.IdProfesional = p.IdPersona
     WHERE		IdMedicion = pIdMedicion;
     
     SELECT 'Ok' as Mensaje;
@@ -743,7 +822,7 @@ END$$
 
 DROP PROCEDURE IF EXISTS `bsp_dame_persona`$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_persona` (`pIdPersona` SMALLINT)  SALIR:BEGIN
-	DECLARE pSalida smallint;
+	-- DECLARE pSalida smallint;
 	/*
 	Procedimiento que sirve para instanciar una persona desde la base de datos.
     */
@@ -761,11 +840,13 @@ IF EXISTS (SELECT IdPersona FROM Clientes WHERE IdPersona = pIdPersona) THEN
 		FROM	personas p JOIN clientes c ON p.IdPersona = c.IdPersona
 		WHERE	p.IdPersona = pIdPersona;
 ELSE
-		SELECT	IdPersona,IdTipoDocumento,IdRol,Apellidos,Nombres,Documento,Telefono,Sexo
-				,Observaciones,EstadoPer,DATE_FORMAT(FechaNac,'%d-%m-%Y') as FechaNac,Correo,Usuario
-                ,Calle,Numero,Piso,Pais,Ciudad,Pais
-		FROM	personas
-		WHERE	IdPersona = pIdPersona;
+		SELECT	per.IdPersona,per.IdTipoDocumento,per.IdRol,per.Apellidos,per.Nombres,per.Documento,per.Telefono,per.Sexo
+				,per.Observaciones,per.EstadoPer,DATE_FORMAT(per.FechaNac,'%d-%m-%Y') as FechaNac,per.Correo,per.Usuario
+                ,per.Calle,per.Numero,per.Piso,per.Pais,per.Ciudad,per.Pais,per.Departamento,DATE_FORMAT(prof.FechaAlta,'%d-%m-%Y') AS FechaAlta,
+                DATE_FORMAT(prof.FechaBaja,'%d-%m-%Y') as FechaBaja
+		FROM	personas per
+				LEFT JOIN profesionales prof on per.IdPersona = prof.IdPersona
+		WHERE	per.IdPersona = pIdPersona;
 END IF;
 
 	
@@ -804,12 +885,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_persona_correo_pass` (`pCo
 END$$
 
 DROP PROCEDURE IF EXISTS `bsp_dame_plan`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_plan` (IN `pIdPlan` SMALLINT)  SALIR:BEGIN
-	DECLARE pSalida smallint;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_plan` (`pIdPlan` SMALLINT)  SALIR:BEGIN
 	/*
 	Procedimiento que sirve para instanciar un plan desde la base de datos.
     */
-    IF NOT EXISTS(SELECT * FROM	planes WHERE IdPlan = pIdPlan ) THEN
+    IF NOT EXISTS(SELECT IdPlan FROM planes WHERE IdPlan = pIdPlan ) THEN
 		SELECT 'El plan no existe!' AS Mensaje;
 		LEAVE SALIR;
     END IF;
@@ -824,8 +904,9 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_plan_cliente` (`pIdPersona
 	/*
 	Procedimiento que devuelve los el plan al cual esta inscripto el cliente.
     */
-    IF NOT EXISTS(SELECT IdPersona FROM	personas WHERE IdPersona = pIdPersona ) THEN
-		SELECT 'La persona no existe!' AS Mensaje;
+    DECLARE pFechaUltimaAsistencia date;
+    IF NOT EXISTS(SELECT IdPersona FROM	clientes WHERE IdPersona = pIdPersona ) THEN
+		SELECT 'El cliente no existe!' AS Mensaje;
 		LEAVE SALIR;
     END IF;
     
@@ -833,87 +914,63 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_plan_cliente` (`pIdPersona
 		SELECT 'La persona no esta inscripta en ningun plan!' AS Mensaje;
 		LEAVE SALIR;
     END IF;
-    
-	SELECT	p.IdPlan,p.Plan,c.ClasesDisponibles,c.MesesCredito,MAX(DATE_FORMAT(c.FechaUltimaAsistencia, "%d/%m/%Y")) as FechaUltimaAsistencia,'Ok' AS Mensaje
-	FROM	clientes c JOIN planes p 
-    ON		c.IdPlan = p.IdPlan
+
+-- Devuelvo los datos del plan al cual asiste
+	SELECT	p.IdPlan,p.Plan,c.ClasesDisponibles,c.MesesCredito,'Ok' AS Mensaje
+	FROM	clientes c
+			LEFT JOIN planes p ON c.IdPlan = p.IdPlan
 	WHERE	p.IdPlan != 1 AND c.IdPersona = pIdPersona;
- 
-END$$
 
-DROP PROCEDURE IF EXISTS `bsp_dame_total_mediciones`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_dame_total_mediciones` (`pIdCliente` SMALLINT)  SALIR:BEGIN
-	/*
-	Procedimiento que sirve para dar la cantidad de mediciones que tiene un cliente con un cierto Id
-    */
-    
--- Controla que la persona(cliente) exista
-    IF NOT EXISTS(SELECT * FROM	mediciones WHERE IdCliente = pIdCliente ) THEN
-		SELECT 0 AS Total;
-		LEAVE SALIR;
-    END IF;
-    
-    SELECT COUNT(IdMedicion) AS Total 
-	FROM mediciones
-	WHERE IdCliente = pIdCliente;
+-- Devuelvo la ultima asistencia
+	SELECT	MAX(DATE_FORMAT(Fecha, "%d/%m/%Y")) as FechaUltimaAsistencia
+	FROM	asistencias
+	WHERE	IdPersona = pIdPersona;
+--     HAVING  MAX(IdAsistencia);
 
 END$$
 
-DROP PROCEDURE IF EXISTS `bsp_darbaja_persona`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_darbaja_persona` (`pIdPersona` SMALLINT)  SALIR:BEGIN
+DROP PROCEDURE IF EXISTS `bsp_darbaja_plan`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_darbaja_plan` (`pIdPlan` SMALLINT)  SALIR:BEGIN
 	/*
-    Permite cambiar el estado de la persona a B: Baja siempre y cuando no 
-    esté dada de baja ya y exista en la BD.
-    Ademas si es un cliente o un entrenador lo da de baja en la respectiva tabla
+    Permite cambiar el estado de un plan dado un pIdPlan a B: Baja 
+    siempre y cuando no esté dada de baja ya. 
     Devuelve OK o el mensaje de error en Mensaje.
     */
+    -- Controla que el pIdPlan sea obligatorio 
+	IF pIdPlan = '' OR pIdPlan IS NULL THEN
+		SELECT 'Debe proveer un plan' AS Mensaje;
+		LEAVE SALIR;
+    END IF;
 
-    
-DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		SHOW ERRORS;
-		SELECT 'Error en la transacción. Contáctese con el administrador.' Mensaje;
-		-- NULL AS Id;
-		ROLLBACK;
-	END;
-    
--- Controla que la persona exista
-    IF NOT EXISTS(SELECT IdPersona FROM Personas WHERE IdPersona = 1) THEN
-		SELECT 'La persona con ese Id no existe.' AS Mensaje;
+-- Controlo que el IdPlan exista
+	IF NOT EXISTS(SELECT IdPlan FROM Planes WHERE IdPlan = pIdPlan) THEN
+		SELECT 'Plan inexistente' AS Mensaje;
         LEAVE SALIR;
 	END IF;
-
--- Controla que la persona no este ya dada de baja
-	IF (SELECT EstadoPer FROM Personas WHERE IdPersona = pIdPersona) = 'B' THEN
-		SELECT 'La persona ya está dada de baja.' AS Mensaje;
+    
+-- Controlo que el plan no este actualmente dado de baja
+	IF (SELECT EstadoPlan FROM Planes WHERE IdPlan = pIdPlan) = 'B' THEN
+		SELECT 'El plan ya está dada de baja.' AS Mensaje;
         LEAVE SALIR;
 	END IF;
-
--- Si es un PROFESIONAL lo da de baja en la tabla PROFESIONALES tambien
-	IF EXISTS (SELECT IdPersona FROM Profesionales WHERE IdPersona = pIdPersona) THEN
-		UPDATE	Profesionales
-		SET		EstadoProf = 'B'
-		WHERE	IdPersona = pIdPersona;
-	END IF;
-
--- Si es un CLIENTE lo da de baja en la tabla CLIENTES tambien
-	IF EXISTS (SELECT IdPersona FROM Clientes WHERE IdPersona = pIdPersona) THEN
-		UPDATE	Clientes
-		SET		EstadoCli = 'B'
-		WHERE	IdPersona = pIdPersona;
-        
-        -- Seteo a '0' todas las clases o planes inscriptos
-		UPDATE	Asistencias
-		SET		ClasesDisponibles = 0 AND mesesCredito = 0
-		WHERE	IdPersona = pIdPersona;
+-- Controlo si alguien tiene meses disponibles en el plan
+	IF EXISTS ( SELECT MesesCredito FROM clientes WHERE IdPlan = pIdPlan) != 0  THEN
+		SELECT 'El plan posee clientes inscriptos' AS Mensaje;
+        LEAVE SALIR;
 	END IF;
     
--- Da de baja en tabla personas
-    UPDATE	Personas
-    SET		EstadoPer = 'B'
-    WHERE	IdPersona = pIdPersona;
-    
-    SELECT 'OK' AS Mensaje;
+-- Controlo si alguien tiene clases disponibles en el plan
+	IF EXISTS ( SELECT ClasesDisponibles FROM clientes WHERE IdPlan = pIdPlan) != 0  THEN
+		SELECT 'El plan posee clientes inscriptos' AS Mensaje;
+        LEAVE SALIR;
+	END IF;
+  
+    -- Da de baja
+	UPDATE	Planes
+    SET		EstadoPlan = 'B'
+    WHERE	IdPlan = pIdPlan;
+
+    SELECT 'Ok' AS Mensaje;
 END$$
 
 DROP PROCEDURE IF EXISTS `bsp_darbaja_profesional`$$
@@ -944,11 +1001,140 @@ DECLARE EXIT HANDLER FOR SQLEXCEPTION
         LEAVE SALIR;
 	END IF;
 
-    
 -- Da de baja en tabla personas
     UPDATE	Personas
     SET		EstadoPer = 'B'
     WHERE	IdPersona = pIdPersona;
+    
+-- Actualizo la fecha de baja
+	UPDATE	profesionales
+	SET		FechaBaja = curdate()
+	WHERE	IdPersona = pIdPersona;
+    
+    SELECT 'Ok' AS Mensaje;
+END$$
+
+DROP PROCEDURE IF EXISTS `bsp_editar_cliente`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_editar_cliente` (`pIdPersona` INT(11), `pIdTipoDocumento` INT(11), `pApellidos` VARCHAR(60), `pNombres` VARCHAR(60), `pDocumento` VARCHAR(60), `pPassword` CHAR(32), `pTelefono` VARCHAR(30), `pSexo` CHAR(1), `pObservaciones` VARCHAR(250), `pFechaNac` DATE, `pCorreo` VARCHAR(50), `pUsuario` VARCHAR(60), `pCalle` VARCHAR(60), `pPiso` INT(11), `pDepartamento` VARCHAR(10), `pCiudad` VARCHAR(60), `pPais` VARCHAR(60), `pNumero` INT(11), `pObjetivo` VARCHAR(60), `pOcupacion` VARCHAR(60), `pHorario` VARCHAR(60))  SALIR:BEGIN
+	/*
+    Permite editar un cliente, dado su IdPersona, con todos sus datos.
+    Si la contraseña es NULL entonces no se modifica    
+    Devuelve OK o el mensaje de error en Mensaje.
+    */
+    DECLARE pFecha date;
+	-- Manejo de error en la transacción
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		SHOW ERRORS;
+		-- SELECT 'Error en la transacción. Contáctese con el administrador.' Mensaje;
+		ROLLBACK;
+	END;
+    
+    -- Controla que el documento sea obligatoria 
+	IF pDocumento = '' OR pDocumento IS NULL THEN
+		SELECT 'Debe proveer un documento para la persona' AS Mensaje;
+		LEAVE SALIR;
+    END IF;
+    
+-- Si se ingreso un documento distinto al que ya se tenia, entonces , se controla que no 
+-- haya uno existente igual
+IF ((SELECT Documento FROM Personas WHERE IdPersona = pIdPersona ) != pDocumento) THEN
+	IF EXISTS(SELECT Documento FROM Personas WHERE Documento = pDocumento) THEN
+		SELECT 'Ya existe una persona con ese documento' AS Mensaje;
+		LEAVE SALIR;
+    END IF;
+END IF;
+
+-- Si se ingreso un correo distinto al que ya se tenia, entonces , se controla que no 
+-- haya uno existente igual
+IF (SELECT Correo FROM Personas WHERE IdPersona = pIdPersona ) != pCorreo THEN
+	IF (SELECT Correo FROM Personas WHERE Correo = pCorreo) THEN
+		SELECT 'Ya existe una persona con ese correo' AS Mensaje;
+		LEAVE SALIR;
+    END IF;
+END IF;
+
+-- Controla que no exista una persona con ese usuario
+IF (SELECT Usuario FROM Personas WHERE IdPersona = pIdPersona ) != pUsuario THEN
+	IF (SELECT Usuario FROM Personas WHERE Usuario = pUsuario) THEN
+		SELECT 'Ya existe una persona con ese usuario' AS Mensaje;
+		LEAVE SALIR;
+    END IF;
+END IF;
+
+
+
+-- Si no se selecciono una CONTRASEÑA o viene vacia , entonces se deja como estaba
+	IF pPassword != '' OR pPassword IS NOT NULL THEN
+		UPDATE Personas SET Password = MD5(pPassword) WHERE IdPersona = pIdPersona;
+    END IF;	
+
+	IF (pFechaNac > CURDATE()) THEN
+		SELECT 'Fecha Incorrecta' AS Mensaje;
+		LEAVE SALIR;
+    END IF;
+-- Si no se selecciono una fecha de nacimiento  o viene vacia , entonces se deja como estaba (Decicion negada)
+	IF (pFechaNac IS NOT NULL) THEN
+		-- SELECT 'Actualizo' as actualizo;
+		UPDATE Personas SET FechaNac = pFechaNac WHERE IdPersona = pIdPersona;
+    END IF;	
+
+-- Actualizo
+   	UPDATE Personas SET IdTipoDocumento = pIdTipoDocumento WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Apellidos = pApellidos WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Nombres = pNombres WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Documento = pDocumento WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Correo = pCorreo WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Usuario = pUsuario WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Calle = pCalle WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Piso = pPiso WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Departamento = pDepartamento WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Ciudad = pCiudad WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Pais = pPais WHERE IdPersona = pIdPersona;
+	UPDATE Personas SET Numero = pNumero WHERE IdPersona = pIdPersona;
+    UPDATE Personas SET Telefono = pTelefono WHERE IdPersona = pIdPersona;
+    UPDATE Personas SET Observaciones = pObservaciones WHERE IdPersona = pIdPersona;
+    UPDATE Personas SET Sexo = pSexo WHERE IdPersona = pIdPersona;
+    
+	UPDATE Clientes SET Objetivo = pObjetivo WHERE IdPersona = pIdPersona;
+	UPDATE Clientes SET Ocupacion = pOcupacion WHERE IdPersona = pIdPersona;
+	UPDATE Clientes SET Horario = pHorario WHERE IdPersona = pIdPersona;
+
+    
+	SELECT 'Ok' AS Mensaje;
+END$$
+
+DROP PROCEDURE IF EXISTS `bsp_eliminar_cliente`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_eliminar_cliente` (`pIdPersona` SMALLINT)  SALIR:BEGIN
+	/*
+    Cambia el estado de un cliente a 'B' dado un IdPersona
+    esté dada de baja ya y exista en la BD.
+    Devuelve OK o el mensaje de error en Mensaje.
+    */
+
+    
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		SHOW ERRORS;
+		-- SELECT 'Error en la transacción. Contáctese con el administrador.' Mensaje;
+		-- NULL AS Id;
+		ROLLBACK;
+	END;
+    
+-- Controla que no exista un documento con el mismo numero que este activo
+	IF NOT EXISTS (SELECT IdPersona FROM clientes WHERE IdPersona = pIdPersona) THEN
+			SELECT 'Cliente inexistente' AS Mensaje;
+			LEAVE SALIR;
+    END IF;
+
+-- Da de baja
+	UPDATE personas set EstadoPer = 'B' WHERE IdPersona = pIdPersona;
+    UPDATE clientes set EstadoCli = 'B' WHERE IdPersona = pIdPersona;
+-- Desinscribir en el plan (Seteo en IdPlan = 1 que es el plan por defecto)
+    UPDATE clientes set IdPlan = 1 WHERE IdPersona = pIdPersona;
+-- Pongo en cero las clases y meses de credito
+    UPDATE clientes set ClasesDisponibles = 0 WHERE IdPersona = pIdPersona;
+    UPDATE clientes set MesesCredito = 0 WHERE IdPersona = pIdPersona;
     
     SELECT 'Ok' AS Mensaje;
 END$$
@@ -980,6 +1166,45 @@ DECLARE EXIT HANDLER FOR SQLEXCEPTION
     SELECT 'Ok' AS Mensaje;
 END$$
 
+DROP PROCEDURE IF EXISTS `bsp_listar_asistencias_cliente`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_asistencias_cliente` (`pDesde` INT, `pIdPersona` INT)  SALIR:BEGIN
+	/*
+	Permite listar las asistencias desde un cierto valor y de un cierto cliente.
+    Ademas indica la cantidad de asistencias del cliente
+    */
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		SHOW ERRORS;
+		--  SELECT 'Error en la transacción. Contáctese con el administrador.' Mensaje;
+		ROLLBACK;
+	END;
+    
+    IF pDesde <=0 THEN
+        SET pDesde = 0;
+    END IF;
+
+-- Controla que la persona exista
+	IF NOT EXISTS(SELECT IdPersona FROM personas WHERE IdPersona = pIdPersona ) THEN
+		SELECT 'Persona inexistente' AS Mensaje;
+		LEAVE SALIR;
+    END IF;
+    
+		SELECT		a.Fecha,pla.Plan
+		FROM		asistencias a
+					LEFT JOIN clientes c ON a.IdPersona = c.IdPersona
+                    LEFT JOIN planes pla ON a.IdPlan = pla.IdPlan
+		where		a.IdPersona = pIdPersona
+        -- group by	a.IdPersona
+		ORDER BY	a.Fecha desc
+		LIMIT 		pDesde,5;
+        
+		SELECT 		count(a.IdPersona) AS totalAsistencias
+		FROM		asistencias a
+		where		a.IdPersona = pIdPersona
+        group by	a.IdPersona;
+
+END$$
+
 DROP PROCEDURE IF EXISTS `bsp_listar_clientes_estado`$$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_clientes_estado` (IN `pDesde` INT, `pEstado` CHAR)  BEGIN
 	/*
@@ -1005,11 +1230,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_clientes_estado` (IN `pD
     WHERE 	pEstado = 'B' OR (pEstado = 'A' AND c.EstadoCli = 'A');
 END$$
 
-DROP PROCEDURE IF EXISTS `bsp_listar_clientes_plan_estado`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_clientes_plan_estado` (IN `pDesde` INT, `pIdPlan` INT, `pIncluyeBajas` CHAR)  SALIR:BEGIN
+DROP PROCEDURE IF EXISTS `bsp_listar_clientes_plan`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_clientes_plan` (IN `pDesde` INT, `pIdPlan` INT)  SALIR:BEGIN
 	/*
 	Permite listar los clientes desde un cierto valor y de un cierto plan.
-    Permite seleccionar si incluye los dados de baja o no (EstadoCli) (S: si - N: no)
+
     Ademas indica la cantidad de clases disponibles de cada cliente
     */
 -- Control de el parametro 'pDesde' por si viene igualado a cero
@@ -1035,42 +1260,42 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_clientes_plan_estado` (I
 	IF (pIdPlan != 0 AND pIdPlan != -1 )THEN
 		SELECT		p.IdPersona,p.Apellidos,p.Nombres,c.ClasesDisponibles,c.IdPlan
 		FROM		(personas p JOIN clientes c ON p.IdPersona = c.IdPersona)
-		WHERE		(pIncluyeBajas = 'S' OR (pIncluyeBajas = 'N' AND c.EstadoCli = 'A')) AND c.IdPLan = pIdPlan AND EstadoPer = 'A'
+		WHERE		c.IdPLan = pIdPlan AND EstadoPer = 'A'
 	-- 	GROUP BY	p.IdPersona
 		ORDER BY	p.Apellidos asc
 		LIMIT 		pDesde,5;
         
 		SELECT 	COUNT(c.IdPersona) AS cantCli
 		FROM 	(personas p JOIN clientes c ON p.IdPersona = c.IdPersona)
-		WHERE  	c.IdPLan = pIdPlan AND (pIncluyeBajas = 'S' OR (pIncluyeBajas = 'N' AND c.EstadoCli = 'A')) AND EstadoPer = 'A';
+		WHERE  	c.IdPLan = pIdPlan AND EstadoPer = 'A';
 	END IF; 
 
 -- Muestra todos los clientes incluidos los que NO esten inscripton en algun plan
   	IF (pIdPlan = -1 ) THEN
 		SELECT		p.IdPersona,p.Apellidos,p.Nombres,c.IdPlan,c.ClasesDisponibles
 		FROM		(personas p JOIN clientes c ON p.IdPersona = c.IdPersona)
-		WHERE		pIncluyeBajas = 'S' OR (pIncluyeBajas = 'N' AND c.EstadoCli = 'A') AND EstadoPer = 'A'
+		WHERE		EstadoPer = 'A'
 	-- 	GROUP BY	p.IdPersona
 		ORDER BY	p.Apellidos asc
 		LIMIT 		pDesde,5;
         
 		SELECT 	COUNT(c.IdPersona) AS cantCli
 		FROM 	personas p JOIN clientes c ON p.IdPersona = c.IdPersona
-		WHERE  	pIncluyeBajas = 'S' OR (pIncluyeBajas = 'N' AND c.EstadoCli = 'A') AND EstadoPer = 'A';
+		WHERE  	EstadoPer = 'A';
 	END IF; 
 
 -- Muestra los clientes que estan inscriptos en algun plan
 	IF (pIdPlan = 0 )THEN
 		SELECT		p.IdPersona,p.Apellidos,p.Nombres,pl.Plan,c.IdPlan,c.ClasesDisponibles
 		FROM		personas p JOIN clientes c ON p.IdPersona = c.IdPersona JOIN planes pl ON pl.IdPlan = c.IdPlan
-		WHERE		(pIncluyeBajas = 'S' OR (pIncluyeBajas = 'N' AND c.EstadoCli = 'A') AND EstadoPer = 'A') AND c.IdPlan != 1
+		WHERE		EstadoPer = 'A' AND c.IdPlan != 1
 	-- 	GROUP BY	p.IdPersona
 		ORDER BY	p.Apellidos asc
 		LIMIT 		pDesde,5;
         
 		SELECT 	COUNT(c.IdPersona) AS cantCli
 		FROM	(personas p JOIN clientes c ON p.IdPersona = c.IdPersona) JOIN planes pl ON pl.IdPlan = c.IdPlan
-		WHERE  	(pIncluyeBajas = 'S' OR (pIncluyeBajas = 'N' AND c.EstadoCli = 'A') AND EstadoPer = 'A') AND c.IdPlan != 1;
+		WHERE  	EstadoPer = 'A' AND c.IdPlan != 1;
 	END IF;
 END$$
 
@@ -1087,7 +1312,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_egresos` (IN `pDesde` IN
     SELECT 	distinct Descripcion,Monto,Fecha,Cantidad,e.IdTransaccion
     FROM 	egresos e
 			left join transacciones t on t.IdTransaccion = e.IdTransaccion
- 	WHERE  (t.Fecha >= pFechaInicio AND t.Fecha <= pFechaFin)
+ 	WHERE  ((Fecha >= DATE_ADD(pFechaInicio, INTERVAL 1 DAY)) AND (Fecha <= DATE_ADD(pFechaFin, INTERVAL 1 DAY)))
     group by e.IdTransaccion
 	ORDER BY 	t.Fecha desc
     LIMIT 	pDesde,5;
@@ -1095,7 +1320,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_egresos` (IN `pDesde` IN
 	SELECT COUNT(e.IdTransaccion) AS maximo
 	FROM 	egresos e
 			left join transacciones t on t.IdTransaccion = e.IdTransaccion
-    WHERE  (Fecha >= pFechaInicio AND Fecha <= pFechaFin);
+    WHERE  ((Fecha >= DATE_ADD(pFechaInicio, INTERVAL 1 DAY)) AND (Fecha <= DATE_ADD(pFechaFin, INTERVAL 1 DAY)));
     
 END$$
 
@@ -1116,7 +1341,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_ingresos` (IN `pDesde` I
                 LEFT JOIN clientes c ON t.IdPersona = c.IdPersona
                 LEFT JOIN planes pl ON pl.IdPlan = c.IdPlan
                 LEFT join egresos e ON t.IdTransaccion = e.IdTransaccion
- 	WHERE  		(t.Fecha >= pFechaInicio AND t.Fecha <= pFechaFin) and e.IdTransaccion is null
+ 	WHERE  		((Fecha >= DATE_ADD(pFechaInicio, INTERVAL 1 DAY)) AND (Fecha <= DATE_ADD(pFechaFin, INTERVAL 1 DAY))) and e.IdTransaccion is null
 	GROUP BY 	t.IdTransaccion
     ORDER BY 	t.Fecha desc
     LIMIT 		pDesde,5;
@@ -1124,7 +1349,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_ingresos` (IN `pDesde` I
 	SELECT  COUNT(t.IdTransaccion) AS maximo
 	FROM  	transacciones t
 			LEFT join egresos e ON t.IdTransaccion = e.IdTransaccion
-    WHERE  	(t.Fecha >= pFechaInicio AND t.Fecha <= pFechaFin) and e.IdTransaccion is null;
+    WHERE  	((Fecha >= DATE_ADD(pFechaInicio, INTERVAL 1 DAY)) AND (Fecha <= DATE_ADD(pFechaFin, INTERVAL 1 DAY))) and e.IdTransaccion is null;
     
 END$$
 
@@ -1168,7 +1393,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_mediciones` (IN `pDesde`
     SELECT		m.IdMedicion,DATE_FORMAT(m.Fecha, "%d %M %Y") as Fecha,m.Altura,m.Peso,m.IMC,m.Musc,m.Grasa,m.GV,p.Apellidos,p.Nombres  -- ,COUNT(IdMedicion) AS 'maximo'
     FROM		Mediciones m JOIN Personas p ON IdProfesional = IdPersona
     WHERE		IdCliente = pIdPersona
-    -- ORDER BY	IdMedicion asc
+    ORDER BY	m.IdMedicion desc
     LIMIT 		pDesde,5;
     
     SELECT COUNT(IdMedicion) AS 'totalMediciones'
@@ -1200,7 +1425,7 @@ IF(pIncluyeBajas = 0) then
 
 	SELECT COUNT(IdPersona) AS cantProf
 	FROM Personas 
-    WHERE IdRol = '2' OR IdRol = '3' AND EstadoPer = 'A';
+    WHERE (IdRol = '2' OR IdRol = '3') AND EstadoPer = 'A';
 -- Lista el personal dado de alta y dado de baja
 else
     SELECT		p.IdPersona,p.Apellidos,p.Nombres,p.Usuario,r.Rol,p.EstadoPer as Estado
@@ -1210,9 +1435,9 @@ else
     ORDER BY	p.apellidos asc
     LIMIT 		pDesde,5;
 
-	SELECT COUNT(IdPersona) AS cantProf
-	FROM Personas 
-    WHERE IdRol = '2' OR IdRol = '3';
+	SELECT 	COUNT(IdPersona) AS cantProf
+	FROM 	Personas 
+    WHERE 	IdRol = '2' OR IdRol = '3';
     
 end if;
 
@@ -1288,12 +1513,12 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_todos_planes` ()  BEGIN
     
     SELECT		*
     FROM		Planes
-    WHERE		IdPlan != 1
+    WHERE		IdPlan != 1 AND EstadoPlan = 'A'
     ORDER BY	IdPlan asc;
     
  	SELECT COUNT(IdPlan) AS cantPlanes
  	FROM planes
-    WHERE		IdPlan != 1;
+    WHERE		IdPlan != 1 AND EstadoPlan = 'A';
 END$$
 
 DROP PROCEDURE IF EXISTS `bsp_listar_transacciones`$$
@@ -1305,70 +1530,70 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_listar_transacciones` (`pDesde`
     IF pDesde <=0 THEN
         SET pDesde = 0;
     END IF;
-    
-    
+
     SELECT 		t.IdTransaccion,t.Fecha,p.Apellidos,p.Nombres,t.Monto,t.Cantidad,t.Descripcion,t.IdTransaccion,e.IdTransaccion
     FROM 		transacciones t 
 				LEFT JOIN Personas p ON p.IdPersona = t.IdPersona
                 LEFT JOIN egresos e ON e.IdTransaccion = t.IdTransaccion
- 	WHERE  		Fecha >= pFechaInicio AND Fecha <= pFechaFin
+ 	WHERE  		((Fecha >= DATE_ADD(pFechaInicio, INTERVAL 1 DAY)) AND (Fecha <= DATE_ADD(pFechaFin, INTERVAL 1 DAY)))	-- Sumo 1 a las fechas por que asi me lo envia el front end
     GROUP BY 	t.IdTransaccion
     ORDER BY	t.IdTransaccion desc
  	LIMIT 		pDesde,5;
     
 	SELECT	COUNT(IdTransaccion) AS maximo
 	FROM 	Transacciones
-    WHERE  		Fecha >= pFechaInicio AND Fecha <= pFechaFin;
+    WHERE  	((Fecha >= DATE_ADD(pFechaInicio, INTERVAL 1 DAY)) AND (Fecha <= DATE_ADD(pFechaFin, INTERVAL 1 DAY)));
     
 	-- SELECT pFechaInicio as pFechaInicio ,pFechaFin as pFechaFin; 
 
 END$$
 
-DROP PROCEDURE IF EXISTS `bsp_marcar_asistencia_cliente_plan`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_marcar_asistencia_cliente_plan` (`pIdPersona` SMALLINT, `pIdPlan` INT)  SALIR:BEGIN
+DROP PROCEDURE IF EXISTS `bsp_marcar_asistencia`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_marcar_asistencia` (`pIdPersona` SMALLINT)  SALIR:BEGIN
 	/*
 	Procedimiento que marca la asistencia de un cierto cliente con un IdPersona
     inscripto en un cierto plan
     */
-
+    DECLARE pIdAsistencia,pIdPlan,pClasesDisponibles smallint;
+-- Controlo que pIdPersona tenga clases disponibles en el plan o meses de credito , si no la da de baja en el plan
+    IF ((SELECT ClasesDisponibles FROM clientes WHERE IdPersona = pIdPersona)  < 1)  THEN
+		SELECT 'Plan actual agotado' AS Mensaje;
+        LEAVE SALIR;
+    END IF;
+    
 -- Controlo que el cliente no este dado de baja
     IF (SELECT EstadoCli FROM Clientes WHERE IdPersona = pIdPersona ) = 'B' THEN
 		SELECT 'El cliente esta dado de baja' AS Mensaje;
         UPDATE	clientes
-		SET		ClasesDisponibles = 0,mesesCredito = 0,FechaUltimaAsistencia = curdate()
-		WHERE	IdPersona = pIdPersona AND IdPlan = pIdPlan;
+		SET		ClasesDisponibles = 0,mesesCredito = 0,IdPlan = 1
+		WHERE	IdPersona = pIdPersona;
 		LEAVE SALIR;
     END IF;
+-- Obtengo el plan al cual esta asistiendo
+    SET pIdPlan = (SELECT IdPlan FROM clientes WHERE IdPersona = pIdPersona);
 
--- Controla que no se le haya pasado el mes ; LO HACE OTRO SP
-    /*IF DATE_ADD( (SELECT Fecha FROM clientes WHERE IdPersona = pIdPersona AND IdPlan = pIdPlan), INTERVAL 1 MONTH) < CURDATE()  THEN
-		SELECT 'Plan vencido' AS Mensaje;
-		LEAVE SALIR;
-    END IF;*/
-    
--- Controlo que pIdPersona tenga clases disponibles en el plan pIdPlan, si no la da de baja en el plan pIdPlan
-    IF ((SELECT ClasesDisponibles FROM clientes WHERE IdPersona = pIdPersona AND IdPlan = pIdPlan)  <= 1) THEN
+-- Controlo que pIdPersona tenga clases disponibles en el plan o meses de credito , si no la da de baja en el plan
+    IF (((SELECT ClasesDisponibles FROM clientes WHERE IdPersona = pIdPersona)  < 1) AND ((SELECT MesesCredito FROM clientes WHERE IdPersona = pIdPersona)  <= 0)) THEN
 		SELECT 'Plan actual agotado' AS Mensaje;
         UPDATE	clientes
-		SET		EstadoCli = 'B' , ClasesDisponibles = 0,FechaUltimaAsistencia = curdate()
-		WHERE	IdPersona = pIdPersona AND IdPlan = pIdPlan;
+		SET		EstadoCli = 'B' , ClasesDisponibles = 0,IdPlan = 1
+		WHERE	IdPersona = pIdPersona ;
         LEAVE SALIR;
     END IF;
     
-    
+    set pClasesDisponibles = (SELECT ClasesDisponibles FROM clientes WHERE IdPersona = pIdPersona);
 -- Actualizo (marco la asistencia)
     UPDATE clientes 
-    SET ClasesDisponibles = (SELECT ClasesDisponibles FROM clientes WHERE IdPersona = pIdPersona AND IdPlan = pIdPlan) - 1,FechaUltimaAsistencia = curdate()
-    WHERE IdPersona = pIdPersona AND IdPlan = pIdPlan;
+    SET 	ClasesDisponibles = (pClasesDisponibles) - 1
+    WHERE IdPersona = pIdPersona;
     
--- Controlo que pIdPersona tenga clases disponibles en algun plan   en el plan pIdPlan en el mes corriente y posea meses de credito, si no lo da de baja
-   IF ((SELECT ClasesDisponibles FROM clientes WHERE IdPersona = pIdPersona AND IdPlan = pIdPlan)  = 0 AND (SELECT mesesCredito FROM clientes WHERE IdPersona = pIdPersona AND IdPlan = pIdPlan) = 0) THEN
-		UPDATE	Clientes 
-		SET		EstadoCli = 'B'
-		WHERE	IdPersona = pIdPersona AND IdPlan = pIdPlan;
-    END IF;
+-- Inserto en el historico de asistencias
+	SET pIdAsistencia = 1 + (SELECT COALESCE(MAX(IdAsistencia),0) FROM Asistencias);
 
-SELECT 'Ok' AS Mensaje;
+	INSERT INTO Asistencias(IdAsistencia,IdPersona,IdPlan,Fecha)
+    VALUES(pIdAsistencia,pIdPersona,pIdPlan,curdate());
+
+	SELECT 'Ok' AS Mensaje;
 
 END$$
 
@@ -1424,10 +1649,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_movimientos_cliente` (`pIdPerso
     END IF;
     
 	SELECT		t.Fecha,t.Monto,t.Cantidad,t.Descripcion,p.Plan
-    FROM		(Transacciones t JOIN clientes c ON t.IdPersona = c.IdPersona) JOIN Planes p ON c.IdPlan = p.IdPlan
+    FROM		(Transacciones t JOIN clientes c ON t.IdPersona = c.IdPersona) JOIN Planes p ON t.IdPlanAbonado = p.IdPlan
     WHERE		t.IdPersona = pIdPersona
 	GROUP BY	t.IdTransaccion
-    ORDER BY	t.IdTransaccion asc
+    ORDER BY	t.IdTransaccion desc
     LIMIT 		pDesde,5;
     
     SELECT COUNT(IdTransaccion) AS maximo
@@ -1437,6 +1662,84 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `bsp_movimientos_cliente` (`pIdPerso
 END$$
 
 DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `asistencias`
+--
+
+DROP TABLE IF EXISTS `asistencias`;
+CREATE TABLE `asistencias` (
+  `IdAsistencia` int(11) NOT NULL,
+  `IdPersona` int(11) NOT NULL,
+  `IdPlan` int(11) NOT NULL,
+  `Fecha` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `asistencias`
+--
+
+INSERT INTO `asistencias` (`IdAsistencia`, `IdPersona`, `IdPlan`, `Fecha`) VALUES
+(1, 2, 2, '2020-09-11'),
+(2, 2, 3, '2020-09-11'),
+(3, 3, 2, '2020-09-12'),
+(4, 4, 3, '2020-09-11'),
+(5, 4, 3, '2020-09-11'),
+(6, 4, 3, '2020-09-11'),
+(7, 4, 4, '2020-09-12'),
+(8, 4, 4, '2020-09-12'),
+(9, 7, 5, '2020-11-28'),
+(10, 7, 4, '2020-11-27'),
+(11, 7, 5, '2020-11-28'),
+(12, 8, 2, '2020-11-28'),
+(13, 8, 2, '2020-11-28'),
+(14, 3, 4, '2020-11-28'),
+(15, 3, 4, '2020-11-28'),
+(16, 3, 4, '2020-11-28'),
+(17, 3, 4, '2020-11-28'),
+(18, 3, 4, '2020-11-28'),
+(19, 3, 4, '2020-11-28'),
+(20, 3, 4, '2020-11-28'),
+(21, 3, 4, '2020-11-28'),
+(22, 3, 4, '2020-11-28'),
+(23, 3, 4, '2020-11-28'),
+(24, 3, 4, '2020-11-28'),
+(25, 3, 4, '2020-11-28'),
+(26, 3, 2, '2020-11-30'),
+(27, 7, 5, '2020-11-30'),
+(28, 11, 4, '2020-11-30'),
+(29, 11, 4, '2020-11-30'),
+(30, 11, 4, '2020-11-30'),
+(31, 11, 4, '2020-11-30'),
+(32, 11, 4, '2020-11-30'),
+(33, 11, 4, '2020-11-30'),
+(34, 11, 4, '2020-11-30'),
+(35, 11, 4, '2020-11-30'),
+(36, 11, 4, '2020-11-30'),
+(37, 11, 4, '2020-11-30'),
+(38, 11, 4, '2020-11-30'),
+(39, 11, 4, '2020-11-30'),
+(40, 10, 3, '2020-11-30'),
+(41, 4, 4, '2020-11-30'),
+(42, 13, 4, '2020-11-30'),
+(43, 13, 4, '2020-11-30'),
+(44, 13, 4, '2020-11-30'),
+(45, 13, 4, '2020-11-30'),
+(46, 13, 4, '2020-11-30'),
+(47, 13, 4, '2020-11-30'),
+(48, 13, 4, '2020-11-30'),
+(49, 13, 4, '2020-11-30'),
+(50, 13, 4, '2020-11-30'),
+(51, 13, 4, '2020-11-30'),
+(52, 13, 4, '2020-11-30'),
+(53, 14, 2, '2020-11-30'),
+(54, 14, 2, '2020-11-30'),
+(55, 14, 2, '2020-11-30'),
+(56, 14, 2, '2020-11-30'),
+(57, 14, 2, '2020-11-30'),
+(58, 14, 2, '2020-11-30');
 
 -- --------------------------------------------------------
 
@@ -1454,18 +1757,24 @@ CREATE TABLE `clientes` (
   `FechaInicio` date NOT NULL,
   `Horario` varchar(60) DEFAULT NULL,
   `ClasesDisponibles` int(11) DEFAULT NULL,
-  `MesesCredito` int(11) DEFAULT NULL,
-  `FechaUltimaAsistencia` date DEFAULT NULL COMMENT 'Fecha la cual se marco la ultima asistencia'
+  `MesesCredito` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `clientes`
 --
 
-INSERT INTO `clientes` (`IdPersona`, `IdPlan`, `Objetivo`, `EstadoCli`, `Ocupacion`, `FechaInicio`, `Horario`, `ClasesDisponibles`, `MesesCredito`, `FechaUltimaAsistencia`) VALUES
-(2, 2, NULL, 'A', NULL, '2020-08-23', NULL, 6, 3, NULL),
-(6, 1, 'Jugar al fubol', 'B', 'Futbolista', '2020-09-01', 'Mañana', 0, 0, NULL),
-(7, 5, 'Jugar y mejorar cada dia', 'A', 'Futbolista', '2020-09-01', 'Noche', 3, 1, NULL);
+INSERT INTO `clientes` (`IdPersona`, `IdPlan`, `Objetivo`, `EstadoCli`, `Ocupacion`, `FechaInicio`, `Horario`, `ClasesDisponibles`, `MesesCredito`) VALUES
+(2, 1, 'Jugar al basquet', 'B', 'Deportista', '2020-09-11', 'Noche', 0, 0),
+(3, 1, 'Jugar al futbol n 10', 'B', 'Futbolista', '2020-09-11', 'Mañana', 0, 0),
+(4, 4, 'Jugar de 10 y competir con messi', 'A', 'Futbolista', '2020-09-11', 'Noche', 11, 1),
+(7, 1, 'Trabajar piernas y pectorales', 'B', 'Futbolista', '2020-11-28', 'Tarde/Noche', 0, 0),
+(8, 1, 'Hombros', 'B', 'Contador', '2020-11-28', 'Mañana', 0, 0),
+(10, 3, 'Jugar basquet', 'A', 'Deportista', '2020-11-30', 'Tarde y mañana', 2, 2),
+(11, 1, 'Jugar hockey', 'B', 'Deportista profesional', '2020-11-30', 'Noche', 0, 0),
+(12, 1, 'Jugar Futbol', 'B', 'Futbolista', '2020-11-30', 'Mañana', 0, 0),
+(13, 4, 'Boxear con ambos brazos', 'A', 'Boxeador', '2020-11-30', 'Nocturno', 1, 1),
+(14, 2, 'Jugar Basquet', 'A', 'Basquetbolista', '2020-11-30', 'Mañana', 0, 0);
 
 -- --------------------------------------------------------
 
@@ -1483,7 +1792,11 @@ CREATE TABLE `egresos` (
 --
 
 INSERT INTO `egresos` (`IdTransaccion`) VALUES
-(2);
+(7),
+(8),
+(14),
+(15),
+(19);
 
 -- --------------------------------------------------------
 
@@ -1511,7 +1824,10 @@ CREATE TABLE `mediciones` (
 --
 
 INSERT INTO `mediciones` (`IdMedicion`, `IdCliente`, `IdProfesional`, `Fecha`, `Altura`, `Peso`, `IMC`, `Musc`, `Grasa`, `GV`, `EstadoMed`) VALUES
-(1, 2, 5, '2020-09-01', '2.00', '100.00', 3, 1.5, 3.2, 1.5, 'A');
+(1, 7, 5, '2020-11-28', '1.90', '91.00', 3, 6, 2, 3, 'A'),
+(2, 7, 6, '2020-11-28', '1.90', '62.00', 3.5, 2, 2.1, 2.2, 'A'),
+(3, 3, 6, '2020-11-28', '1.10', '60.00', 1.3, 2, 3, 4, 'A'),
+(4, 7, 6, '2020-11-30', '1.65', '99.00', 2.3, 2.1, 5, 6.31, 'A');
 
 -- --------------------------------------------------------
 
@@ -1526,7 +1842,7 @@ CREATE TABLE `personas` (
   `IdRol` int(11) NOT NULL,
   `Apellidos` varchar(60) NOT NULL,
   `Nombres` varchar(60) NOT NULL,
-  `Documento` varchar(60) NOT NULL,
+  `Documento` char(10) NOT NULL,
   `Password` char(60) NOT NULL,
   `Telefono` varchar(30) DEFAULT NULL,
   `Sexo` char(1) NOT NULL,
@@ -1548,13 +1864,20 @@ CREATE TABLE `personas` (
 --
 
 INSERT INTO `personas` (`IdPersona`, `IdTipoDocumento`, `IdRol`, `Apellidos`, `Nombres`, `Documento`, `Password`, `Telefono`, `Sexo`, `FechaNac`, `Correo`, `Usuario`, `Calle`, `Numero`, `Piso`, `Departamento`, `Ciudad`, `Pais`, `EstadoPer`, `Observaciones`) VALUES
-(1, 1, 3, 'AdminAp', 'AdminNom', '4565465', '81dc9bdb52d04dc20036dbd8313ed055', '4566', '1', '1990-02-02', 'admin@admin.com', 'admin', 'admin', 2, 2, 'admin', 'admin', 'admin', 'A', 'Ninguna'),
-(2, 1, 1, 'Messi', 'Lionel', '52313213', '81dc9bdb52d04dc20036dbd8313ed055', '456546', '0', '2020-08-04', 'messi@gmail.com', 'Messi', NULL, NULL, NULL, '', '', '', 'A', ''),
-(3, 1, 2, 'Ronaldo', 'Cristiano', '164565446', '81dc9bdb52d04dc20036dbd8313ed055', '4646', '0', '2020-08-04', 'Ronaldo@gmail.com', 'Ronaldo', '', NULL, NULL, '', '', '', 'A', 'Empieza hoy'),
-(4, 1, 2, 'Beckan', 'David', '546659', '81dc9bdb52d04dc20036dbd8313ed055', '456896', '0', '2020-08-05', 'david@gmail.com', 'DavidBeckan', '', NULL, NULL, '', '', '', 'A', 'Juega Futbol'),
-(5, 1, 2, 'Molina', 'Andrea', '2147483647', '81dc9bdb52d04dc20036dbd8313ed055', '15489665', '1', '0000-00-00', 'molina@gmail.com', 'molina', 'Gral Paz', 500, 5, '', 'San miguel de tucuman', 'Argetina', 'A', 'Ninguna'),
-(6, 1, 1, 'Maradona', 'Diego', '456789789', '81dc9bdb52d04dc20036dbd8313ed055', '456456', '0', '2010-08-04', 'diego@gmail.com', 'Diego', NULL, NULL, NULL, '', '', '', 'A', 'Ninguna'),
-(7, 1, 1, 'Maradona', 'Miguel', '4565646', '81dc9bdb52d04dc20036dbd8313ed055', '456465', '0', '2020-06-02', 'maradoMigu@gmail.com', 'MaradoMig', NULL, NULL, NULL, '', '', '', 'A', '');
+(1, 1, 3, 'AdminAp', 'AdminNom', '156875', '81dc9bdb52d04dc20036dbd8313ed055', '124565', '0', '2010-02-02', 'admin@gmail.com', 'admin', 'Santiago', 12, 8, '9', 'San miguel de tucuman', 'Argentina', 'A', 'Ninguna'),
+(2, 1, 1, 'Ginobili', 'Fabricio', '1346798566', '81dc9bdb52d04dc20036dbd8313ed055', '45678792', '0', '2020-09-01', 'gino@gmail.com', 'ManuelGino', NULL, NULL, NULL, '', '', 'Argentina', 'B', 'Ninguna'),
+(3, 1, 1, 'Messi', 'Lionel', '1232145664', '81dc9bdb52d04dc20036dbd8313ed055', '456645', '0', '2020-09-01', 'messi@gmail.com', 'messi', NULL, NULL, NULL, '', '', 'Argentina', 'A', 'Ninguna'),
+(4, 1, 1, 'Maradona', 'Diego', '4567498787', '81dc9bdb52d04dc20036dbd8313ed055', '212365465', '0', '2020-09-07', 'marado@gmail.com', 'maradona', NULL, NULL, NULL, '', '', 'Chile', 'A', 'Ninguna'),
+(5, 1, 2, 'Dybala', 'Paulo Marcelo', '1546654789', '81dc9bdb52d04dc20036dbd8313ed055', '45689662', '0', '2020-09-01', 'dybala@gmail.com', 'dybala', '', NULL, NULL, '', 'New York', 'EE UU', 'A', 'Ninguna'),
+(6, 1, 2, 'Garcia', 'Jose Maria', '3465457846', '81dc9bdb52d04dc20036dbd8313ed055', '15435678', '0', '2009-12-10', 'garcia123@gmail.com', 'garciaJose', 'Virgen de la merced', 20, NULL, '', 'San miguel de tucuman', 'Argentina', 'A', 'Es un buen profesional'),
+(7, 1, 1, 'Higuain', 'Marcelo Hugo', '12345687', '81dc9bdb52d04dc20036dbd8313ed055', '3819658742', '0', '2009-10-05', 'gonzaloHiguain@gmail.com', 'gonza', NULL, NULL, NULL, '', 'Buenos aires', 'Argentina', 'B', 'Ninguna'),
+(8, 1, 1, 'Padilla', 'Mariano', '45656478', '81dc9bdb52d04dc20036dbd8313ed055', '456456', '0', '2020-11-03', 'mari@gmail.com', 'mariano', NULL, NULL, NULL, '', '', '', 'B', 'Ninguna'),
+(9, 1, 2, 'Pizzini', 'Carlos', '456783126', '81dc9bdb52d04dc20036dbd8313ed055', '465897', '0', '2020-11-27', 'pizzini@gmail.com', 'pizzini', '', NULL, NULL, '', 'Ciudad 1', 'Colombia', 'A', 'Especialista en musculatura de cuello'),
+(10, 1, 1, 'Ginobili', 'Manuel', '45678978', '81dc9bdb52d04dc20036dbd8313ed055', '45647896', '0', '2014-09-01', 'ginobili@gmail.com', 'ginoBili', NULL, NULL, NULL, '', '', '', 'A', 'Ninguna'),
+(11, 1, 1, 'Aymar', 'Luciana', '459783213', '81dc9bdb52d04dc20036dbd8313ed055', '5645648', '1', '2020-11-19', 'aymar@gmail.com', 'aymar', NULL, NULL, NULL, '', '', '', 'A', 'Ninguna'),
+(12, 1, 1, 'Cannigia', 'Daniel', '456897897', '81dc9bdb52d04dc20036dbd8313ed055', '45646512', '0', '2020-11-18', 'caniggia@gmail.com', 'cannigia', NULL, NULL, NULL, '', '', 'Argentina', 'A', 'Ninguna'),
+(13, 1, 1, 'Monzon', 'Carlos', '123457897', '81dc9bdb52d04dc20036dbd8313ed055', '45646578', '0', '2020-11-02', 'monzon@gmail.com', 'monzon', NULL, NULL, NULL, '', '', '', 'A', 'Brazo izquierdo con dolencia'),
+(14, 1, 1, 'Scola', 'Luis', '16574789', '81dc9bdb52d04dc20036dbd8313ed055', '5636875', '0', '2020-10-26', 'luis@gmail.com', 'ScolaLuis', NULL, NULL, NULL, '', '', '', 'A', 'Nignua');
 
 -- --------------------------------------------------------
 
@@ -1567,7 +1890,7 @@ CREATE TABLE `planes` (
   `IdPlan` int(11) NOT NULL,
   `Plan` varchar(60) NOT NULL,
   `Descripcion` varchar(250) DEFAULT NULL,
-  `Precio` decimal(13,2) NOT NULL DEFAULT 0.00,
+  `Precio` decimal(13,2) NOT NULL DEFAULT '0.00',
   `EstadoPlan` char(1) NOT NULL,
   `CantClases` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1578,10 +1901,11 @@ CREATE TABLE `planes` (
 
 INSERT INTO `planes` (`IdPlan`, `Plan`, `Descripcion`, `Precio`, `EstadoPlan`, `CantClases`) VALUES
 (1, 'Sin Plan', 'Cualquier cliente que no este inscripto en algun plan', '1.00', 'B', 1),
-(2, 'Zumba con aerobic', 'Para lucir un cuerpo esplendido', '500.00', 'A', 7),
-(3, 'Plan verano', 'Este es el plan que necesitas!', '1500.00', 'B', 3),
-(4, 'Plan para la cuarentena', 'Este es un buen plan', '600.00', 'B', 3),
-(5, 'Completo ', 'Este es un plan para que puedas disfrutar por completo\n', '1500.00', 'A', 3);
+(2, 'Zumba', 'Esta es una plan de zumba', '500.00', 'A', 6),
+(3, 'Plan septiembre', 'Este es el plan de septiembre\n', '200.00', 'A', 3),
+(4, 'Plan Uno', 'Este es el plan para vos!', '1600.00', 'A', 12),
+(5, 'Plan invierno', 'Este es un buen plan para el invierno! No olvides inscribirte!', '1500.00', 'A', 13),
+(6, 'Plan Movimiento ', 'Este es el plan para moverse', '900.00', 'B', 15);
 
 -- --------------------------------------------------------
 
@@ -1601,10 +1925,10 @@ CREATE TABLE `profesionales` (
 --
 
 INSERT INTO `profesionales` (`IdPersona`, `FechaAlta`, `FechaBaja`) VALUES
-(1, '2020-08-23', NULL),
-(3, '2020-08-24', NULL),
-(4, '2020-08-24', NULL),
-(5, '2020-09-01', NULL);
+(1, '2020-09-11', NULL),
+(5, '2020-09-12', '2020-11-30'),
+(6, '2020-11-28', '2020-11-28'),
+(9, '2020-11-30', NULL);
 
 -- --------------------------------------------------------
 
@@ -1626,7 +1950,7 @@ CREATE TABLE `roles` (
 INSERT INTO `roles` (`IdRol`, `Rol`, `Estado`) VALUES
 (1, 'Cliente', 'A'),
 (2, 'Profesional', 'A'),
-(3, 'Administrador', 'B');
+(3, 'Administrador', 'A');
 
 -- --------------------------------------------------------
 
@@ -1664,7 +1988,7 @@ CREATE TABLE `transacciones` (
   `Descripcion` varchar(60) DEFAULT NULL,
   `Monto` decimal(13,2) NOT NULL,
   `Fecha` date NOT NULL,
-  `Cantidad` int(11) NOT NULL DEFAULT 0 COMMENT 'Cantidad de meses que pago un cliente'
+  `Cantidad` int(11) NOT NULL DEFAULT '0' COMMENT 'Cantidad de meses que pago un cliente'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1672,14 +1996,47 @@ CREATE TABLE `transacciones` (
 --
 
 INSERT INTO `transacciones` (`IdTransaccion`, `IdPersona`, `IdPlanAbonado`, `Descripcion`, `Monto`, `Fecha`, `Cantidad`) VALUES
-(1, 2, 2, 'Pago 3 meses de zumba , lionewl', '1500.00', '2020-08-23', 3),
-(2, NULL, NULL, 'Se compro remeras para sortear', '900.00', '2020-09-01', 1),
-(3, 7, 4, 'Pago 2 de cuarentena', '1200.00', '2020-09-01', 2),
-(4, 7, 5, 'Se cambio a completo', '1500.00', '2020-09-01', 1);
+(1, 2, 2, 'Transferencia bancaria', '1000.00', '2020-09-11', 2),
+(2, 2, 2, 'Transferencia bancaria', '1000.00', '2020-09-11', 2),
+(3, 2, 3, '456', '200.00', '2020-09-11', 1),
+(4, 4, 3, 'a', '200.00', '2020-09-11', 1),
+(5, 3, 2, 'a', '2500.00', '2020-09-11', 5),
+(6, 4, 3, 'Pago plan septiembre', '400.00', '2020-07-12', 2),
+(7, NULL, NULL, 'Se compro guantes de boxeo', '600.00', '2020-09-12', 1),
+(8, NULL, NULL, 'Se compro guantes de boxeo', '600.00', '2020-09-12', 1),
+(9, 4, 4, 'Pago el plan Uno', '3200.00', '2020-09-12', 2),
+(10, 4, 3, '3 septiembre', '600.00', '2020-09-12', 3),
+(11, 4, 4, '3 de plan uno', '4800.00', '2020-09-11', 3),
+(12, 7, 5, 'Pago con tarjeta de debito', '4500.00', '2020-11-28', 3),
+(13, 8, 2, '-', '1500.00', '2020-11-28', 3),
+(14, NULL, NULL, 'Se compro mancuernas', '600.00', '2020-11-28', 1),
+(15, NULL, NULL, 'Se adquirio liquido para maquinaria vieja', '1235.00', '2020-11-28', 12),
+(16, 3, 4, 'ninguno', '3200.00', '2020-11-28', 2),
+(17, 3, 2, 'Solo asistira los miercoles', '1000.00', '2020-11-30', 2),
+(18, 10, 5, 'Ninguno', '4500.00', '2020-11-30', 3),
+(19, NULL, NULL, 'Se pago internet', '500.00', '2020-11-30', 3),
+(20, 11, 4, 'Dejo una transferencia bancaria', '4800.00', '2020-11-30', 3),
+(21, 11, 3, 'Pago 3 meses de plan septiembre', '600.00', '2020-11-30', 3),
+(22, 11, 5, 'Dejo señado', '6000.00', '2020-11-30', 4),
+(23, 11, 4, '-', '3200.00', '2020-11-30', 2),
+(24, 11, 3, '-', '200.00', '2020-11-30', 1),
+(25, 11, 3, '--', '200.00', '2020-11-30', 1),
+(26, 10, 3, 'Pago manuel', '600.00', '2020-11-30', 3),
+(27, 4, 4, 'Pago efectivo', '3200.00', '2020-11-30', 2),
+(28, 12, 5, 'Dejo pagado mitad con tarjeta y mitad efectivo', '3000.00', '2020-07-30', 2),
+(29, 13, 4, 'Pago 2 meses de plan uno', '3200.00', '2020-11-30', 2),
+(30, 14, 2, 'Pago 1 mes de zumba', '500.00', '2020-11-30', 1);
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `asistencias`
+--
+ALTER TABLE `asistencias`
+  ADD PRIMARY KEY (`IdAsistencia`),
+  ADD KEY `fk_Asistencias_Clientes1_idx` (`IdPersona`);
 
 --
 -- Indexes for table `clientes`
@@ -1753,11 +2110,16 @@ ALTER TABLE `transacciones`
 -- AUTO_INCREMENT for table `personas`
 --
 ALTER TABLE `personas`
-  MODIFY `IdPersona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
-
+  MODIFY `IdPersona` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `asistencias`
+--
+ALTER TABLE `asistencias`
+  ADD CONSTRAINT `fk_Asistencias_Clientes1` FOREIGN KEY (`IdPersona`) REFERENCES `clientes` (`IdPersona`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 --
 -- Constraints for table `clientes`
@@ -1797,7 +2159,6 @@ ALTER TABLE `profesionales`
 --
 ALTER TABLE `transacciones`
   ADD CONSTRAINT `fk_Transacciones_Clientes1` FOREIGN KEY (`IdPersona`) REFERENCES `clientes` (`IdPersona`) ON DELETE NO ACTION ON UPDATE NO ACTION;
-COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
