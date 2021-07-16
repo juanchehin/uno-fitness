@@ -25,9 +25,13 @@ dameAsistencias(  IdPersona , desde = 0 ) {
   let url = URL_SERVICIOS + '/asistencias/' + desde + '/' + IdPersona;
 
   url += '?token=' + this.personaService.token;  // query
-  return this.http.get( url );
-
-
+  return this.http.get(
+            url, {
+              headers: {
+                token: this.personaService.token
+              }
+            }
+        );
 }
 // ==================================================
 //  Marca la asistencia , recibe un IdPersona y un IdPlan

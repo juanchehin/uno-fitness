@@ -447,7 +447,14 @@ cargarPersonal( desde: number , incluyeBajas: number ) {
   let url = URL_SERVICIOS + '/personas/personal/listar/' + desde + '/' + incluyeBajas;
   url += '?token=' + this.token;  // query
   url += '&IdRol=' + this.IdRol;
-  return this.http.get( url );
+  // return this.http.get( url );
+  return this.http.get(
+    url, {
+      headers: {
+        token: this.token
+      }
+    }
+);
 
 }
 // ==================================================

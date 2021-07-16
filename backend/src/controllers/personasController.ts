@@ -1,17 +1,6 @@
 import { Request, Response, NextFunction, response } from 'express';
-
-var fileUpload = require('express-fileupload');
-// const cors = require("cors");
-
-// import bcrypt from '@types/bcrypt/index';
-// var bcrypt = require('@types/bcrypt');
-
-var fs = require('fs');
 import pool from '../database';
-
 const path = require('path');
-
-// var bcrypt = require('@types/bcrypt');
 
 class PersonasController {
  // ==================================================
