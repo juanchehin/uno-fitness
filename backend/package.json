@@ -7,7 +7,7 @@
         "build": "tsc",
         "watch": "tsc -w",
         "dev": "nodemon ./build",
-        "start": "node index.js" // Comando agregado para subir a HEROKU
+        "start": "node index.js"
     },
     "keywords": [],
     "author": "Chehin Juan Martin",

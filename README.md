@@ -1,3 +1,6 @@
+* Back End *
+-----------
+
 Instalaciones 
 -------------
 
@@ -21,3 +24,8 @@ Para ejecutar
 --------------
 
 - transcibir codigo con 'tsc'
+
+* Front End *
+-----------
+
+- npm install sweetalert2
