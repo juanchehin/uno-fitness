@@ -68,10 +68,20 @@ crearPlan( plan: Plan) {
 
   let url = URL_SERVICIOS + '/planes';
 
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
+  // url += '?token=' + this.personaService.token;  // query
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  return this.http.post(url , plan );
+  // return this.http.post(url , plan );
+
+  return this.http.post(
+    url,
+    plan,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+);
 
 }
 

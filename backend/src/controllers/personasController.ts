@@ -467,6 +467,8 @@ public async darBajaProfesional(req: Request, res: Response) {
 
 public async listarPersonal(req: Request, res: Response): Promise<void> {
 
+    console.log('req listarPersonal headers es : ',req.headers);
+
      var desde =  req.params.desde;
      var incluyeBajas =  req.params.incluyeBajas;
 

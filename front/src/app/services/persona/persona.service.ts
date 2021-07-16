@@ -314,10 +314,17 @@ cargarClientesPlanEstado( desde: number = 0 , IdPlan) {
 
   let url = URL_SERVICIOS + '/personas/clientes/plan/' + desde + '/' + IdPlan ;  // query
 
-  url += '?token=' + this.token;  // query
-  url += '&IdRol=' + this.IdRol;
+  // url += '?token=' + this.token;  // query
+  url += '?IdRol=' + this.IdRol;
 
-  return this.http.get( url );
+  // return this.http.get( url );
+  return this.http.get(
+    url, {
+      headers: {
+        token: this.token
+      }
+    }
+);
 
 }
 // ==================================================
@@ -354,11 +361,20 @@ crearCliente( cliente: Cliente ) {
 
   let url = URL_SERVICIOS + '/personas/cliente';
 
-  url += '?token=' + this.token;  // query
-  url += '&IdRol=' + this.IdRol;
+  // url += '?token=' + this.token;  // query
+  url += '?IdRol=' + this.IdRol;
 
 
-  return this.http.post(url , cliente );
+  // return this.http.post(url , cliente );
+  return this.http.post(
+    url,
+    cliente,
+    {
+      headers: {
+        token: this.token
+      }
+    }
+);
 }
 
 // ==================================================
@@ -434,6 +450,8 @@ editarProfesional( profesional: Profesional ) {
 // ==================================================
 cargarProfesionales(  ) {
 
+  console.log('entra en cargarProfesionales');
+
     let url = URL_SERVICIOS + '/personas/profesionales';
     url += '?IdRol=' + this.IdRol;  // params
     return this.http.get( url );
@@ -444,10 +462,13 @@ cargarProfesionales(  ) {
 // ==================================================
 cargarPersonal( desde: number , incluyeBajas: number ) {
 
+  console.log('entra en cargarPersonal');
   let url = URL_SERVICIOS + '/personas/personal/listar/' + desde + '/' + incluyeBajas;
-  url += '?token=' + this.token;  // query
-  url += '&IdRol=' + this.IdRol;
+  // url += '?token=' + this.token;  // query
+  url += '?IdRol=' + this.IdRol;
   // return this.http.get( url );
+  console.log('url entra en cargarPersonal',url);
+
   return this.http.get(
     url, {
       headers: {

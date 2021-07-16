@@ -6,7 +6,8 @@ var SEED = require('../config/config').SEED;
 //        TOKEN - importa el orden
 // ==================================================
 exports.verificaToken = function (req, res, next) {
-    var token = req.query.token;
+    // var token = req.query.token;
+    var token = req.headers.token;
     jwt.verify(token, SEED, function (err, decoded) {
         if (err) {
             return res.status(401).json({
@@ -23,7 +24,7 @@ exports.verificaToken = function (req, res, next) {
 // ==================================================
 exports.verificaAdmin = function (req, res, next) {
     var IdRol = req.query.IdRol;
-    console.log('IdRol en exports.verificaAdmin es : ', IdRol);
+    console.log('req.query en exports.verificaAdmin es : ', req.query);
     if (IdRol === '3') {
         // Es un ADMIN y todo esta bien
         console.log('Eres ADMIN !!!');

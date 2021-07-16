@@ -39,14 +39,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 exports.__esModule = true;
-var fileUpload = require('express-fileupload');
-// const cors = require("cors");
-// import bcrypt from '@types/bcrypt/index';
-// var bcrypt = require('@types/bcrypt');
-var fs = require('fs');
 var database_1 = __importDefault(require("../database"));
 var path = require('path');
-// var bcrypt = require('@types/bcrypt');
 var PersonasController = /** @class */ (function () {
     function PersonasController() {
     }
@@ -549,6 +543,7 @@ var PersonasController = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        console.log('req listarPersonal headers es : ', req.headers);
                         desde = req.params.desde;
                         incluyeBajas = req.params.incluyeBajas;
                         return [4 /*yield*/, database_1["default"].query('call bsp_listar_personal(?,?)', [desde, incluyeBajas])];

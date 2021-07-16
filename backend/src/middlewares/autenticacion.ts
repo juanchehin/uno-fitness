@@ -1,7 +1,5 @@
 var jwt = require('jsonwebtoken');
-
 var SEED = require('../config/config').SEED;
-
 
 import { Request, Response, NextFunction } from 'express';
 
@@ -12,8 +10,8 @@ import { Request, Response, NextFunction } from 'express';
 
 exports.verificaToken = function(req: Request,res:Response,next: NextFunction){
 
-
-var token = req.query.token;
+// var token = req.query.token;
+var token = req.headers.token;
 
 jwt.verify(token , SEED, (err: any,decoded: any) =>{
 
@@ -38,7 +36,7 @@ exports.verificaAdmin = function(req: Request,res:Response,next: NextFunction){
 
     var IdRol = req.query.IdRol;
 
-    console.log('IdRol en exports.verificaAdmin es : ', IdRol);
+    console.log('req.query en exports.verificaAdmin es : ', req.query);
 
     if(IdRol === '3'){
         // Es un ADMIN y todo esta bien
