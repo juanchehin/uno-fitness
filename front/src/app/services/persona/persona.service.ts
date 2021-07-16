@@ -374,7 +374,6 @@ buscarClientePorPlan( Apellidos: string , Nombres: string , IdPlan: string  ) {
 // ==================================================
 //        Crear cliente
 // ==================================================
-
 crearCliente( cliente: Cliente ) {
 
   let url = URL_SERVICIOS + '/personas/cliente';
@@ -406,7 +405,6 @@ eliminarCliente( IdPersona ) {
   return this.http.delete(url );
 }
 
-
 // ==================================================
 //        Editar Cliente
 // ==================================================
@@ -435,12 +433,16 @@ editarCliente( cliente: Cliente ) {
 crearProfesional( entrenador: Profesional ) {
 
   let url = URL_SERVICIOS + '/personas/profesional';
+  url += '?IdRol=' + this.IdRol;
 
-  url += '?token=' + this.token;  // query
-  url += '&IdRol=' + this.IdRol;
-
-
-  return this.http.post(url , entrenador );
+  return this.http.post(url,
+    entrenador,
+    {
+      headers: {
+        token: this.token
+      }
+    }
+  );
 }
 
 // ==================================================
@@ -452,11 +454,16 @@ editarProfesional( profesional: Profesional ) {
   const id = profesional.IdPersona;
 
   let url = URL_SERVICIOS + '/personas/profesional/actualizar/' + id;
-  url += '?token=' + this.token;  // query
-  url += '&IdRol=' + this.IdRol;
+  url += '?IdRol=' + this.IdRol;
 
-
-  return this.http.put(url , profesional );
+  return this.http.put(url,
+    profesional,
+    {
+      headers: {
+        token: this.token
+      }
+    }
+  );
 }
 
 // ==================================================
@@ -478,10 +485,7 @@ cargarPersonal( desde: number , incluyeBajas: number ) {
 
   console.log('entra en cargarPersonal');
   let url = URL_SERVICIOS + '/personas/personal/listar/' + desde + '/' + incluyeBajas;
-  // url += '?token=' + this.token;  // query
   url += '?IdRol=' + this.IdRol;
-  // return this.http.get( url );
-  console.log('url entra en cargarPersonal',url);
 
   return this.http.get(
     url, {
@@ -499,12 +503,15 @@ cargarPersonal( desde: number , incluyeBajas: number ) {
 eliminarProfesional( IdPersona ) {
 
   let url = URL_SERVICIOS + '/personas/profesional/eliminar/' + IdPersona;
-
-  url += '?token=' + this.token;  // query
   url += '&IdRol=' + this.IdRol;
 
-
-  return this.http.delete(url );
+  return this.http.delete(url,
+    {
+      headers: {
+        token: this.token
+      }
+    }
+  );
 }
 
 // ==================================================
@@ -514,13 +521,17 @@ eliminarProfesional( IdPersona ) {
 bajaProfesional( termino: string ) {
 
   let url = URL_SERVICIOS + '/personas/';
-  url += 'array?token=' + this.token;  // query
   url += '&termino=' + termino;
   url += '&IdRol=' + this.IdRol;
 
-  return this.http.put(url, termino)
-          .map( (resp: any) => {
-
+  return this.http.put(url,
+    termino,
+    {
+      headers: {
+        token: this.token
+      }
+    }
+    ).map( (resp: any) => {
             Swal.fire({
               position: 'top-end',
               icon: 'success',
@@ -528,10 +539,7 @@ bajaProfesional( termino: string ) {
               showConfirmButton: false,
               timer: 2000
             });
-
           });
-
 }
-
 
 }
