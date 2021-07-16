@@ -1,14 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-
-var fileUpload = require('express-fileupload');
-// const cors = require("cors");
-
-var fs = require('fs');
 import pool from '../database';
-
-const path = require('path');
-
-// var bcrypt = require('bcryptjs');
 
 class PlanesController {
 

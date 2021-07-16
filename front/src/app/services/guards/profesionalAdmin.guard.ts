@@ -13,17 +13,11 @@ export class ProfesionalAdminGuard implements CanActivate {
   }
 
   canActivate() {
-
-
-
-    if ( (this.personaService.IdRol === 3) || ( this.personaService.IdRol === 2) ) {  // 3: Rol Admin
-
-    return true;
-
+    if ( (this.personaService.IdRol === 3) || ( this.personaService.IdRol === 2) ) {
+      return true;
     } else {
-
-    this.personaService.logout();
-    return false;
+      this.personaService.logout();
+      return false;
     }
   }
 }

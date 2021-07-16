@@ -11,6 +11,9 @@ import { Request, Response, NextFunction } from 'express';
 exports.verificaToken = function(req: Request,res:Response,next: NextFunction){
 
 // var token = req.query.token;
+
+console.log('verificaToken es req.headers: ',req.headers);
+
 var token = req.headers.token;
 
 jwt.verify(token , SEED, (err: any,decoded: any) =>{

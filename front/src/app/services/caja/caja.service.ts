@@ -25,13 +25,16 @@ export class CajaService {
 cargarTransacciones( desde: number = 0 , FechaInicio: any , FechaFin: any) {
 
   let url = URL_SERVICIOS + '/caja/' + desde + '/' + FechaInicio + '/' + FechaFin;
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
+  return this.http.get( url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
 
-  return this.http.get( url );
-
-
+  );
 }
 
 // ==================================================
@@ -60,12 +63,16 @@ dameMovimientosClientes( id: string , desde: number) {
 crearIngreso( ingreso: Ingreso ) {
 
   let url = URL_SERVICIOS + '/caja/ingresos';
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
-
-
-  return this.http.post(url , ingreso );
+  return this.http.post(url,
+    ingreso,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+  );
 }
 
 // ==================================================
@@ -74,11 +81,15 @@ crearIngreso( ingreso: Ingreso ) {
 cargarIngresos( desde: number , FechaInicio: string , FechaFin: string) {
 
   let url = URL_SERVICIOS + '/caja/ingresos/listar/' + desde + '/' + FechaInicio + '/' + FechaFin;
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
-
-  return this.http.get( url );
+  return this.http.get( url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+  );
 
 }
 
@@ -95,12 +106,17 @@ cargarIngresos( desde: number , FechaInicio: string , FechaFin: string) {
 crearEgreso( egreso: Egreso ) {
 
   let url = URL_SERVICIOS + '/caja/egresos';
-
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
+  url += '?IdRol=' + this.personaService.IdRol;
 
 
-  return this.http.post(url , egreso );
+  return this.http.post(url,
+    egreso,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+  );
 }
 
 // ==================================================
@@ -111,11 +127,15 @@ cargarEgresos( desde: number = 0 , FechaInicio: any , FechaFin: any ) {
 
   let url = URL_SERVICIOS + '/caja/egresos/listar/' + desde + '/' + FechaInicio + '/' + FechaFin;;
 
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  return this.http.get( url );
-
+  return this.http.get( url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+  );
 
 }
 }

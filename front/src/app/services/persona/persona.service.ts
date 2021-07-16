@@ -102,7 +102,6 @@ guardarStorage( id: string, token: string, usuario: any, menu: any, IdRol: any )
       this.usuario = localStorage.getItem('usuario');
 
       const var3 = localStorage.getItem('id');
-
       this.personaId = var3;
 
       this.menu = JSON.parse( localStorage.getItem('menu') );
@@ -130,10 +129,14 @@ estaLogueado() {
   renuevaToken() {
 
     let url = URL_SERVICIOS + '/login/renuevatoken';
-    url += '?token=' + this.token;
 
-    return this.http.get( url )
-                .map( (resp: any) => {
+    return this.http.get( url,
+      {
+        headers: {
+          token: this.token
+        }
+      }
+      ).map( (resp: any) => {
 
                   this.token = resp.token;
                   localStorage.setItem('token', this.token );
@@ -208,10 +211,14 @@ cargarPersonas( desde: number = 0 ) {
 dameRoles( ) {
 
   let url = URL_SERVICIOS + '/personas/roles/listar';
-  url += '?token=' + this.token;  // query
 
-  return this.http.get(url)
-          .map( (resp: any) => resp[0]);
+  return this.http.get(url,
+      {
+        headers: {
+          token: this.token
+        }
+      }
+    ).map( (resp: any) => resp[0]);
 }
 // ==================================================
 //        Da de baja una persona
@@ -220,12 +227,16 @@ dameRoles( ) {
   bajaPersona( termino: string ) {
 
     let url = URL_SERVICIOS + '/personas/';
-    url += 'array?token=' + this.token;  // query
     url += '&termino=' + termino;
     url += '&IdRol=' + this.IdRol;
 
-    return this.http.put(url, termino)
-            .map( (resp: any) => {
+    return this.http.put(url,
+      termino,
+      {
+        headers: {
+          token: this.token
+        }
+      }).map( (resp: any) => {
               Swal.fire({
                 position: 'top-end',
                 icon: 'success',
@@ -276,12 +287,17 @@ damePersona( termino: string ) {
 
   actualizarPersona( persona: Persona) {
     let url = URL_SERVICIOS + '/persona/' + this.persona.Correo;
+    url += '?IdRol=' + this.IdRol;
 
-    url += '?token=' + this.token;
-    url += '&IdRol=' + this.IdRol;
-
-    return this.http.put(url, persona)
-            .map( (resp: any) => {
+    return this.http.put(
+      url,
+      persona,
+      {
+        headers: {
+          token: this.token
+        }
+      }
+      ).map( (resp: any) => {
               const personaDB: Persona = resp.usuario;
 
               const param = String(personaDB.IdPersona);
@@ -313,11 +329,8 @@ damePersona( termino: string ) {
 cargarClientesPlanEstado( desde: number = 0 , IdPlan) {
 
   let url = URL_SERVICIOS + '/personas/clientes/plan/' + desde + '/' + IdPlan ;  // query
-
-  // url += '?token=' + this.token;  // query
   url += '?IdRol=' + this.IdRol;
 
-  // return this.http.get( url );
   return this.http.get(
     url, {
       headers: {
@@ -333,12 +346,17 @@ cargarClientesPlanEstado( desde: number = 0 , IdPlan) {
 activarCliente( IdPersona: any ) {
 
   let url = URL_SERVICIOS + '/personas/cliente/activar/' + IdPersona;
+  url += '?IdRol=' + this.IdRol;
 
-  url += '?token=' + this.token;  // query
-  url += '&IdRol=' + this.IdRol;
-
-
-  return this.http.put(url , IdPersona );
+  return this.http.put(
+    url,
+    IdPersona,
+    {
+      headers: {
+        token: this.token
+      }
+    }
+);
 }
 
 // ==================================================
@@ -360,12 +378,8 @@ buscarClientePorPlan( Apellidos: string , Nombres: string , IdPlan: string  ) {
 crearCliente( cliente: Cliente ) {
 
   let url = URL_SERVICIOS + '/personas/cliente';
-
-  // url += '?token=' + this.token;  // query
   url += '?IdRol=' + this.IdRol;
 
-
-  // return this.http.post(url , cliente );
   return this.http.post(
     url,
     cliente,

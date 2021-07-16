@@ -10,16 +10,12 @@ export class LoginGuardGuard implements CanActivate {
   constructor(public personaService: PersonaService, public router: Router) {
   }
   canActivate() {
-
-    // return true;
-
     if ( this.personaService.estaLogueado()) {
       return true;
      } else {
        this.router.navigate(['/login']);
        return false;
     }
-    // return true;
   }
 
 }

@@ -39,12 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 exports.__esModule = true;
-var fileUpload = require('express-fileupload');
-// const cors = require("cors");
-var fs = require('fs');
 var database_1 = __importDefault(require("../database"));
-var path = require('path');
-// var bcrypt = require('bcryptjs');
 var PlanesController = /** @class */ (function () {
     function PlanesController() {
     }

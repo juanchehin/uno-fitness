@@ -24,7 +24,6 @@ dameAsistencias(  IdPersona , desde = 0 ) {
 
   let url = URL_SERVICIOS + '/asistencias/' + desde + '/' + IdPersona;
 
-  url += '?token=' + this.personaService.token;  // query
   return this.http.get(
             url, {
               headers: {
@@ -38,12 +37,15 @@ dameAsistencias(  IdPersona , desde = 0 ) {
 // ==================================================
 marcarAsistenciaPersona( IdPersona: number = 0  ) {
 
-  let url = URL_SERVICIOS + '/asistencias/cliente/' + IdPersona ;
+  let url = URL_SERVICIOS + '/asistencias/cliente/' + IdPersona;
 
-  url += '?token=' + this.personaService.token;  // query
-
-  return this.http.get( url );
-
+  return this.http.get( url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+  );
 
 }
 

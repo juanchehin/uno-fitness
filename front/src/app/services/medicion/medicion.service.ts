@@ -29,12 +29,14 @@ export class MedicionService {
 dameMediciones(id: number, desde: number) {
 
   let url = URL_SERVICIOS + '/mediciones/listar/' + id + '/' + desde;
-  // url += '?desde=' + desde;  // params
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  return this.http.get(url)
-          .map( (resp: any) => resp);
+  return this.http.get(url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }).map( (resp: any) => resp);
 
 }
 
@@ -45,14 +47,17 @@ dameMediciones(id: number, desde: number) {
 dameMedicion( IdMedicion: string) {
 
   let url = URL_SERVICIOS + '/mediciones/' + IdMedicion;
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  return this.http.get(url)
-          .map(
-            (resp: any) => {
-              return resp;
-            });
+  return this.http.get(url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }).map(
+          (resp: any) => {
+          return resp;
+    });
 }
 // ==================================================
 //        Crea una nueva medicion
@@ -61,11 +66,16 @@ dameMedicion( IdMedicion: string) {
   crearMedicion(medicion: Medicion) {
 
     let url = URL_SERVICIOS + '/mediciones';
+    url += '?IdRol=' + this.personaService.IdRol;
 
-    url += '?token=' + this.personaService.token;  // query
-    url += '&IdRol=' + this.personaService.IdRol;
-
-    return this.http.post(url , medicion );
+    return this.http.post(url,
+      medicion,
+      {
+        headers: {
+          token: this.personaService.token
+        }
+      }
+      );
   }
 // ==================================================
 //        Edita una medicion
@@ -74,10 +84,16 @@ editarMedicion(medicion: Medicion) {
 
   let url = URL_SERVICIOS + '/mediciones/actualizar';
 
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  return this.http.put(url , medicion );
+  return this.http.put(url,
+          medicion,
+          {
+            headers: {
+              token: this.personaService.token
+            }
+          }
+    );
 
 }
 // ==================================================
@@ -90,8 +106,13 @@ totalMedicion( termino: string) {
   url += '?token=' + this.personaService.token;  // query
   url += '&IdRol=' + this.personaService.IdRol;
 
-  return this.http.get(url)
-          .map( (resp: any) => resp[0]);
+  return this.http.get(url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+    ).map( (resp: any) => resp[0]);
 
 }
 
@@ -102,13 +123,16 @@ totalMedicion( termino: string) {
 eliminarMedicion( IdMedicion ) {
 
   let url = URL_SERVICIOS + '/mediciones/eliminar/' + IdMedicion;
-
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
+  url += '?IdRol=' + this.personaService.IdRol;
 
 
-  return this.http.delete(url );
+  return this.http.delete(url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+  );
 }
-
 
 }

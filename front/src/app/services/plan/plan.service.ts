@@ -20,9 +20,17 @@ export class PlanService {
 marcarAsistencia( IdAsistencia: number ) {
 
   let url = URL_SERVICIOS + '/planes/asistencia/' + IdAsistencia;
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
-  return this.http.get( url );
+  url += '?IdRol=' + this.personaService.IdRol;
+
+  return this.http.get(
+    url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+);
+
 
 }
 
@@ -33,9 +41,17 @@ marcarAsistencia( IdAsistencia: number ) {
 cargarPlanesCliente( id: string ) {
 
   let url = URL_SERVICIOS + '/planes/cliente/' + id;
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
-  return this.http.get( url );
+  url += '?IdRol=' + this.personaService.IdRol;
+
+  return this.http.get(
+    url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+);
+
 
 }
 
@@ -67,12 +83,7 @@ cargarTodasPlanes( ) {
 crearPlan( plan: Plan) {
 
   let url = URL_SERVICIOS + '/planes';
-
-  // url += '?token=' + this.personaService.token;  // query
   url += '?IdRol=' + this.personaService.IdRol;
-
-  // return this.http.post(url , plan );
-
   return this.http.post(
     url,
     plan,
@@ -86,33 +97,22 @@ crearPlan( plan: Plan) {
 }
 
 // ==================================================
-//        Cargar plan
-// ==================================================
-
-cargarPlan( id: string ) {
-
-  let url = URL_SERVICIOS + '/plan/' + id;
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
-
-  return this.http.get( url )
-            .map( (resp: any) => resp.plan );
-
-}
-
-
-// ==================================================
-//        Obtiene una plan de la BD
+//        Obtiene un plan
 // ==================================================
 
 damePlan( termino: string ) {
 
   let url = URL_SERVICIOS + '/planes/' + termino;
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  return this.http.get(url)
-          .map( (resp: any) => resp[0]);
+  return this.http.get(
+    url,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+).map( (resp: any) => resp[0] );
 }
 
 // ==================================================
@@ -122,11 +122,17 @@ damePlan( termino: string ) {
 actualizarPlan( plan: Plan, IdPlan: string ) {
 
   let url = URL_SERVICIOS + '/planes/actualiza/' + IdPlan;
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
-
-  return this.http.put(url , plan );
+  return this.http.put(
+    url,
+    plan,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+);
 }
 
 
@@ -137,11 +143,17 @@ actualizarPlan( plan: Plan, IdPlan: string ) {
 bajaPlan( IdPlan: string ) {
 
   let url = URL_SERVICIOS + '/planes/baja/' + IdPlan;
+  url += '?IdRol=' + this.personaService.IdRol;
 
-  url += '?token=' + this.personaService.token;  // query
-  url += '&IdRol=' + this.personaService.IdRol;
-
-  return this.http.put(url , IdPlan );
+  return this.http.post(
+    url,
+    IdPlan,
+    {
+      headers: {
+        token: this.personaService.token
+      }
+    }
+);
 
 }
 
