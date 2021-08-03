@@ -52,12 +52,9 @@ var PersonasController = /** @class */ (function () {
             var roles;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        console.log('req.body en listarRoles ', req.body);
-                        return [4 /*yield*/, database_1["default"].query('call bsp_listar_roles()')];
+                    case 0: return [4 /*yield*/, database_1["default"].query('call bsp_listar_roles()')];
                     case 1:
                         roles = _a.sent();
-                        console.log('roles en listarRoles ', roles);
                         res.json(roles);
                         return [2 /*return*/];
                 }
@@ -73,14 +70,11 @@ var PersonasController = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log('req.body es ', req.body);
                         desde = req.query.desde || 0;
                         desde = Number(desde);
                         return [4 /*yield*/, database_1["default"].query('call bsp_listar_personas(?)', [desde])];
                     case 1:
                         personas = _a.sent();
-                        // console.log('Personas en personasCOntroleer es : ', personas);
-                        // console.log('json(personas) en personasCOntroleer es : ', res.json(personas));
                         res.json(personas);
                         return [2 /*return*/];
                 }
@@ -97,11 +91,9 @@ var PersonasController = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         id = req.params.id;
-                        console.log('Entro en getOne y el req.params es : ', req.params);
                         return [4 /*yield*/, database_1["default"].query('call bsp_dame_persona(?)', [id])];
                     case 1:
                         personas = _a.sent();
-                        console.log('personas es : ', personas);
                         if (personas[0][0].Mensaje !== 'La persona no existe!') {
                             return [2 /*return*/, res.json(personas[0])];
                         }
@@ -123,18 +115,13 @@ var PersonasController = /** @class */ (function () {
                         Apellido = req.params.Apellido;
                         Nombre = req.params.Nombre;
                         IdPlan = req.params.IdPlan;
-                        // const Estado = req.params.Estado;
                         if (Apellido === 'null')
                             Apellido = '';
                         if (Nombre === 'null')
                             Nombre = '';
-                        console.log("req.params es buscarPorPlanEstado : ", req.params);
-                        console.log("Nombre es buscarPorPlanEstado : ", Nombre);
-                        console.log("Apellido es buscarPorPlanEstado : ", Apellido);
                         return [4 /*yield*/, database_1["default"].query('call bsp_buscar_cliente_plan_estado(?,?,?)', [Apellido, Nombre, IdPlan])];
                     case 1:
                         clientes = _a.sent();
-                        console.log("personas buscarPorPlanEstado es : ", clientes);
                         res.json(clientes);
                         return [2 /*return*/];
                 }
@@ -151,11 +138,9 @@ var PersonasController = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         busqueda = req.params.busqueda;
-                        console.log("busqueda es : ", busqueda);
                         return [4 /*yield*/, database_1["default"].query('call bsp_buscar_persona(?)', busqueda)];
                     case 1:
                         personas = _a.sent();
-                        console.log("personas es : ", personas);
                         res.json(personas);
                         return [2 /*return*/];
                 }
@@ -172,12 +157,8 @@ var PersonasController = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         id = req.params.id;
-                        // const ViejaPersona = req.body;
-                        // const result = pool.query("CALL bsp_alta_persona(" + req.body.IdRol + "','" + req.body.IdTipoDocumento + "','" + req.body.Apellido + "','" + req.body.Nombre + "','" + req.body.Documento + "','" + req.body.Password + "','" + req.body.Telefono + "','" + req.body.Sexo + "','" + req.body.Observaciones + "','" + req.body.Foto + "','" + req.body.FechaNac + "','" + req.body.Correo + "','" + req.body.Usuario + "','" + req.body.Calle + "','" + req.body.Piso + "','" + req.body.Departamento + "','" + req.body.Ciudad + "','" + req.body.Pais + "','" + req.body.Numero + ")");
                         return [4 /*yield*/, database_1["default"].query('bsp_modifica_persona(?,?)', [req.body, id])];
                     case 1:
-                        // const ViejaPersona = req.body;
-                        // const result = pool.query("CALL bsp_alta_persona(" + req.body.IdRol + "','" + req.body.IdTipoDocumento + "','" + req.body.Apellido + "','" + req.body.Nombre + "','" + req.body.Documento + "','" + req.body.Password + "','" + req.body.Telefono + "','" + req.body.Sexo + "','" + req.body.Observaciones + "','" + req.body.Foto + "','" + req.body.FechaNac + "','" + req.body.Correo + "','" + req.body.Usuario + "','" + req.body.Calle + "','" + req.body.Piso + "','" + req.body.Departamento + "','" + req.body.Ciudad + "','" + req.body.Pais + "','" + req.body.Numero + ")");
                         _a.sent();
                         res.json({ message: "La persona se actualizo" });
                         return [2 /*return*/];
@@ -195,14 +176,9 @@ var PersonasController = /** @class */ (function () {
                 switch (_a.label) {
                     case 0:
                         id = req.query.termino;
-                        console.log('Id en baja personasController es : ', id);
-                        console.log('req.params en baja personasController es : ', req.params);
-                        console.log('req.query en baja personasController es : ', req.query);
                         return [4 /*yield*/, database_1["default"].query('CALL bsp_darbaja_persona(?)', [id])];
                     case 1:
                         result = _a.sent();
-                        console.log('result en baja personasController es ', result);
-                        // await pool.query('DELETE FROM games WHERE id = ?', [id]);
                         res.json({ message: "Persona dada de baja" });
                         return [2 /*return*/];
                 }
@@ -221,7 +197,6 @@ var PersonasController = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("req.body en createCliente es : ", req.body);
                         IdTipoDocumento = req.body.IdTipoDocumento;
                         Apellidos = req.body.Apellidos;
                         Nombres = req.body.Nombres;
@@ -245,17 +220,6 @@ var PersonasController = /** @class */ (function () {
                         return [4 /*yield*/, database_1["default"].query('CALL bsp_alta_cliente(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [IdTipoDocumento, Apellidos, Nombres, Documento, Password, Telefono, Sexo, Observaciones, FechaNac, Correo, Usuario, Calle, Piso, Departamento, Ciudad, Pais, Numero, Objetivo, Ocupacion, Horario])];
                     case 1:
                         result = _a.sent();
-                        console.log("Ingreso hasta aqui en createCliente alta y result es : ", result);
-                        console.log("Ingreso hasta aqui en createCliente alta y result[0] es : ", result[0]);
-                        // console.log("Ingreso hasta aqui en createCliente alta y result[1] es : ",result[1]);
-                        // console.log("Ingreso hasta aqui en result[0][0].Mensaje alta y result[0][0].Mensaje es : ",result[0][0]);
-                        // console.log("Ingreso hasta aqui en result[1][0].IdPersona alta y result[1] es : ",result[1][0]);
-                        // console.log("Ingreso hasta aqui en result[0][0].Mensaje alta y result[0][0].Mensaje es : ",result[0][0].Mensaje);
-                        // console.log("Ingreso hasta aqui en result[1][0].IdPersona alta y result[1] es : ",result[1][0].IdPersona);
-                        // var IdPersona = Number(result[1][0].IdPersona);
-                        // var pIdPersona = JSON.parse(result[1][0].IdPersona);
-                        // var pIdPersona = JSON.stringify(result[1][0].IdPersona);
-                        // console.log("Ingreso hasta aqui en createCliente alta y result[1][0].IdPersona es : ",result[1][0].IdPersona);
                         if (result[0][0].Mensaje === 'La persona ya se encuentra cargada') {
                             return [2 /*return*/, res.json({
                                     Mensaje: result[0][0].Mensaje,
@@ -268,7 +232,6 @@ var PersonasController = /** @class */ (function () {
                                     Mensaje: result[0][0].Mensaje
                                 })];
                         }
-                        console.log("Ingreso hasta aqui en clientes alta y result es : ", result);
                         return [2 /*return*/, res.json({ Mensaje: 'Ok' })];
                 }
             });
@@ -283,20 +246,16 @@ var PersonasController = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("req.params en activarCliente es : ", req.params);
                         IdPersona = req.params.IdPersona;
                         return [4 /*yield*/, database_1["default"].query('CALL bsp_activar_cliente(?)', IdPersona)];
                     case 1:
                         result = _a.sent();
-                        console.log("Ingreso hasta aqui en activarCliente y result es : ", result);
-                        console.log("Ingreso hasta aqui en activarCliente y result[0][0].Mensaje es : ", result[0][0].Mensaje);
                         if (result[0][0].Mensaje !== 'Ok') {
                             return [2 /*return*/, res.json({
                                     ok: false,
                                     mensaje: result[0][0].Mensaje
                                 })];
                         }
-                        console.log("Ingreso hasta aqui en activarCliente y result es : ", result);
                         return [2 /*return*/, res.json({ Mensaje: 'Ok' })];
                 }
             });
@@ -311,15 +270,11 @@ var PersonasController = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log('req.body en clientes ', req.body);
                         desde = req.params.desde || 0;
-                        // var estado = req.params.estado || 'A';
                         desde = Number(desde);
                         return [4 /*yield*/, database_1["default"].query('call bsp_listar_clientes_estado(?)', [desde])];
                     case 1:
                         clientes = _a.sent();
-                        console.log('clientes en personasCOntroleer es : ', clientes);
-                        // console.log('json(personas) en personasCOntroleer es : ', res.json(personas));
                         res.json(clientes);
                         return [2 /*return*/];
                 }
@@ -335,19 +290,16 @@ var PersonasController = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log("req.body en eliminarCliente es : ", req.params);
                         IdPersona = req.params.IdPersona;
                         return [4 /*yield*/, database_1["default"].query('CALL bsp_eliminar_cliente(?)', IdPersona)];
                     case 1:
                         result = _a.sent();
-                        console.log("Ingreso hasta aqui en eliminarCliente y result : ", result);
                         if (result[0][0].Mensaje !== 'Ok') {
                             return [2 /*return*/, res.json({
                                     ok: false,
                                     mensaje: result.Mensaje
                                 })];
                         }
-                        console.log("Ingreso hasta aqui en eliminarCliente y result es : ", result);
                         return [2 /*return*/, res.json({ mensaje: 'Ok' })];
                 }
             });
@@ -543,7 +495,6 @@ var PersonasController = /** @class */ (function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
-                        console.log('req listarPersonal headers es : ', req.headers);
                         desde = req.params.desde;
                         incluyeBajas = req.params.incluyeBajas;
                         return [4 /*yield*/, database_1["default"].query('call bsp_listar_personal(?,?)', [desde, incluyeBajas])];

@@ -302,12 +302,9 @@ public async createProfesional(req: Request, res: Response) {
 
 }
 
-
 // ==================================================
 //        Actualiza un profesional
 // ==================================================
-
-
 public async actualizaProfesional(req: Request, res: Response) {
 
     console.log("req.body en actualizaProfesional es : ", req.body);
@@ -351,7 +348,6 @@ public async actualizaProfesional(req: Request, res: Response) {
 // ==================================================
 //   Da de baja un profesional
 // ==================================================
-
 public async darBajaProfesional(req: Request, res: Response) {
 
     var IdPersona = req.params.IdPersona;
@@ -370,17 +366,11 @@ public async darBajaProfesional(req: Request, res: Response) {
  // ==================================================
 //        Lista el personal del gimnasio desde cierto valor
 // ==================================================
-
 public async listarPersonal(req: Request, res: Response): Promise<void> {
-
-    console.log('req listarPersonal headers es : ',req.headers);
-
-     var desde =  req.params.desde;
-     var incluyeBajas =  req.params.incluyeBajas;
-
-     const personal = await pool.query('call bsp_listar_personal(?,?)',[desde,incluyeBajas]);
-
-     res.json(personal);
+    var desde =  req.params.desde;
+    var incluyeBajas =  req.params.incluyeBajas;
+    const personal = await pool.query('call bsp_listar_personal(?,?)',[desde,incluyeBajas]);
+    res.json(personal);
  }
 
  // ==================================================
