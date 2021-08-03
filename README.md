@@ -12,14 +12,6 @@ Instalaciones
 - npm install --save express-fileupload
 - express cors
 
-- @types/cors
-- @types/express
-- @types/morgan
-- @types/mysql
-- nodemon
-- jwebtocken    ->  npm install jsonwebtoken --save
-
-
 Para ejecutar
 --------------
 

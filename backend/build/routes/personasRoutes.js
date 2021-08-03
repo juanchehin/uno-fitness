@@ -32,7 +32,6 @@ var PersonasRoutes = /** @class */ (function () {
         this.router.get('/:id', personasController_1["default"].getOne);
         this.router.get('/busqueda/:busqueda', personasController_1["default"].buscar);
         this.router.get('/busqueda/plan/:Apellido/:Nombre/:IdPlan', personasController_1["default"].buscarPorPlanEstado);
-        // this.router.get('/busqueda/plan/:Apellido/:Nombre/:IdPlan/:Estado', personasController.buscarPorPlanEstado);
     };
     return PersonasRoutes;
 }());

@@ -1,4 +1,4 @@
-import express, { Router } from 'express';
+import { Router } from 'express';
 
 var mdAutenticacion = require('../middlewares/autenticacion');
 
@@ -31,12 +31,10 @@ class PersonasRoutes {
         this.router.get('/personal/listar/:desde/:incluyeBajas', [mdAutenticacion.verificaToken,mdAutenticacion.verificaAdmin], personasController.listarPersonal);
         this.router.put('/profesional/actualizar/:id', [mdAutenticacion.verificaToken,mdAutenticacion.verificaAdmin] , personasController.actualizaProfesional);    // Actualiza se quito esto , 13/03/20 --> 
         this.router.post('/profesional' ,  [mdAutenticacion.verificaToken,mdAutenticacion.verificaAdmin] , personasController.createProfesional);    // Se quito la autenticacion con token para esto
-
         // ...
         this.router.get('/:id', personasController.getOne);
         this.router.get('/busqueda/:busqueda', personasController.buscar);
         this.router.get('/busqueda/plan/:Apellido/:Nombre/:IdPlan', personasController.buscarPorPlanEstado);
-        // this.router.get('/busqueda/plan/:Apellido/:Nombre/:IdPlan/:Estado', personasController.buscarPorPlanEstado);
     }
 
 }

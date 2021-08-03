@@ -6,8 +6,6 @@ var SEED = require('../config/config').SEED;
 //        TOKEN - importa el orden
 // ==================================================
 exports.verificaToken = function (req, res, next) {
-    // var token = req.query.token;
-    console.log('verificaToken es req.headers: ', req.headers);
     var token = req.headers.token;
     jwt.verify(token, SEED, function (err, decoded) {
         if (err) {
@@ -25,16 +23,13 @@ exports.verificaToken = function (req, res, next) {
 // ==================================================
 exports.verificaAdmin = function (req, res, next) {
     var IdRol = req.query.IdRol;
-    console.log('req.query en exports.verificaAdmin es : ', req.query);
     if (IdRol === '3') {
         // Es un ADMIN y todo esta bien
-        console.log('Eres ADMIN !!!');
         next();
     }
     else {
         // No es un ADMIN
         // Manejar errores aqui, por que en el navegador se ese error en rojo
-        console.log('NO Eres un ADMIN !!!');
         return res.status(401).json({
             ok: false,
             mensaje: 'TOKEN incorrecto - No es ADMIN',
@@ -47,16 +42,13 @@ exports.verificaAdmin = function (req, res, next) {
 // ==================================================
 exports.verificaProfesionalAdmin = function (req, res, next) {
     var IdRol = req.query.IdRol;
-    console.log('IdRol en exports.verificaProfesionalAdmin es : ', IdRol);
     if (IdRol === '3' || IdRol === '2') {
         // Es un ADMIN y todo esta bien
-        console.log('Eres ADMIN o profesional !!!');
         next();
     }
     else {
         // No es un ADMIN
         // Manejar errores aqui, por que en el navegador se ese error en rojo
-        console.log('NO Eres un ADMIN o profesional!!!');
         return res.status(401).json({
             ok: false,
             mensaje: 'TOKEN incorrecto - No es ADMIN o profesional',
@@ -71,10 +63,8 @@ exports.verificaProfesionalAdmin = function (req, res, next) {
 exports.verificaAdmin_o_MismoUsuario = function (req, res, next) {
     var persona = req.body.persona;
     var id = req.params.IdPersona;
-    console.log('Persona en verificaAdmin_o_MismoUsuario es : ', persona);
     if (persona.Rol === 'Profesional' || persona.IdPersona === id) {
         // Es un ADMIN y todo esta bien
-        console.log('Eres ADMIN o mismo usuario!!!');
         next();
         // return;
     }
@@ -83,8 +73,8 @@ exports.verificaAdmin_o_MismoUsuario = function (req, res, next) {
         console.log('NO Eres un ADMIN !!!');
         return res.status(401).json({
             ok: false,
-            mensaje: 'TOKEN incorrecto - No es ADMIN ni el mismo usuario',
-            errors: { messaje: 'No es ADMIN ni el mismo usuario, no puede hacer eso' }
+            mensaje: 'TOKEN incorrecto ',
+            errors: { messaje: 'false' }
         });
     }
 };
